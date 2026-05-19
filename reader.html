@@ -79,11 +79,6 @@
     const audioEl = document.getElementById('bg-music');
     let musicPlaying = false;
 
-    /* PDF.js worker */
-    if (window.pdfjsLib) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = CDN + 'js/pdf.worker.js';
-    }
-
     if (!bookUrl) {
       showError('책 경로가 지정되지 않았습니다.<br>예: <code>reader.html?book=books/chemistry.pdf</code>');
     } else {
@@ -99,7 +94,7 @@
           styles: [CDN + 'css/short-white-book-view.css'],
           links:  [],
           script: CDN + 'js/default-book-view.js',
-          assets: CDN + 'images/'
+          assets: CDN
         }
       });
     }
