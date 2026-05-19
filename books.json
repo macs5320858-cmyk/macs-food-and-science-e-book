@@ -1,0 +1,47 @@
+[
+  {
+    "id": "chemistry",
+    "title": "화학",
+    "author": "Macs Learning Lab",
+    "cover": "",
+    "path": "books/chemistry.epub",
+    "music": "music/chemistry.mp3",
+    "tags": ["과학", "화학"]
+  },
+  {
+    "id": "earth",
+    "title": "지구",
+    "author": "Macs Learning Lab",
+    "cover": "",
+    "path": "books/earth.epub",
+    "music": "music/earth.mp3",
+    "tags": ["과학", "지구과학"]
+  },
+  {
+    "id": "blood-cell",
+    "title": "혈액 세포",
+    "author": "Macs Learning Lab",
+    "cover": "",
+    "path": "books/blood-cell.epub",
+    "music": "music/blood-cell.mp3",
+    "tags": ["과학", "생물"]
+  },
+  {
+    "id": "skin-layer",
+    "title": "피부층",
+    "author": "Macs Learning Lab",
+    "cover": "",
+    "path": "books/skin-layer.epub",
+    "music": "music/skin-layer.mp3",
+    "tags": ["과학", "생물"]
+  },
+  {
+    "id": "animal-cell",
+    "title": "동물 세포",
+    "author": "Macs Learning Lab",
+    "cover": "",
+    "path": "books/animal-cell.epub",
+    "music": "music/animal-cell.mp3",
+    "tags": ["과학", "생물"]
+  }
+]

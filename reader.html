@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>eBook Reader</title>
+  <style>
+    :root {
+      --bg: #f5f0e8;
+      --text: #2c2c2c;
+      --ui-bg: #ffffff;
+      --ui-border: #e0dbd4;
+      --ui-text: #333333;
+      --muted: #999999;
+      --accent: #4a90d9;
+      --btn-hover-bg: #f0ece6;
+      --shadow: rgba(0,0,0,0.08);
+      --shadow-md: rgba(0,0,0,0.14);
+      --toc-bg: #fafaf8;
+      --toc-hover: #f0ece6;
+      --toc-active-bg: #4a90d9;
+      --toc-active-text: #ffffff;
+      --progress-track: #ddd;
+      --progress-fill: #4a90d9;
+      --nav-arrow: #555;
+    }
+
+    .dark {
+      --bg: #18192b;
+      --text: #dde0e8;
+      --ui-bg: #1e2035;
+      --ui-border: #2e3150;
+      --ui-text: #ccd0e0;
+      --muted: #666;
+      --accent: #5ba3f5;
+      --btn-hover-bg: #252840;
+      --shadow: rgba(0,0,0,0.3);
+      --shadow-md: rgba(0,0,0,0.5);
+      --toc-bg: #1a1c2e;
+      --toc-hover: #252840;
+      --toc-active-bg: #5ba3f5;
+      --toc-active-text: #ffffff;
+      --progress-track: #2e3150;
+      --progress-fill: #5ba3f5;
+      --nav-arrow: #aaa;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* ─── TOOLBAR ─── */
+    #toolbar {
+      flex-shrink: 0;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 8px;
+      background: var(--ui-bg);
+      border-bottom: 1px solid var(--ui-border);
+      box-shadow: 0 1px 6px var(--shadow);
+      z-index: 20;
+    }
+
+    .t-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .t-group.right { margin-left: auto; }
+
+    .t-center {
+      flex: 1;
+      min-width: 0;
+      text-align: center;
+    }
+
+    #book-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ui-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #chapter-title {
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 1px;
+    }
+
+    .tb-btn {
+      background: none;
+      border: 1px solid var(--ui-border);
+      border-radius: 7px;
+      padding: 5px 10px;
+      font-size: 13px;
+      color: var(--ui-text);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s;
+      line-height: 1.4;
+    }
+
+    .tb-btn:hover { background: var(--btn-hover-bg); }
+
+    .tb-btn.icon { padding: 5px 9px; font-size: 15px; }
+
+    .font-size-label {
+      font-size: 11px;
+      color: var(--muted);
+      min-width: 36px;
+      text-align: center;
+    }
+
+    /* ─── MAIN ─── */
+    #main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ─── TOC PANEL ─── */
+    #toc-panel {
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 290px;
+      background: var(--toc-bg);
+      border-right: 1px solid var(--ui-border);
+      box-shadow: 3px 0 12px var(--shadow-md);
+      z-index: 15;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(-100%);
+      transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+    }
+
+    #toc-panel.open { transform: translateX(0); }
+
+    #toc-head {
+      flex-shrink: 0;
+      padding: 14px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--ui-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    #toc-close {
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--muted);
+      background: none;
+      border: none;
+      line-height: 1;
+      padding: 2px 4px;
+    }
+
+    #toc-close:hover { color: var(--ui-text); }
+
+    #toc-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+      list-style: none;
+    }
+
+    #toc-list li a {
+      display: block;
+      padding: 9px 16px;
+      font-size: 13px;
+      color: var(--ui-text);
+      text-decoration: none;
+      line-height: 1.4;
+      transition: background 0.12s;
+      border-left: 3px solid transparent;
+    }
+
+    #toc-list li a:hover { background: var(--toc-hover); }
+
+    #toc-list li a.active {
+      background: var(--toc-active-bg);
+      color: var(--toc-active-text);
+      border-left-color: transparent;
+    }
+
+    /* TOC overlay */
+    #toc-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.25);
+      z-index: 14;
+    }
+
+    #toc-overlay.show { display: block; }
+
+    /* ─── READER AREA ─── */
+    #reader-area {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #viewer {
+      width: 100%;
+      max-width: 860px;
+      height: 100%;
+    }
+
+    /* Navigation arrows */
+    .nav-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--ui-bg);
+      border: 1px solid var(--ui-border);
+      box-shadow: 0 2px 8px var(--shadow-md);
+      color: var(--nav-arrow);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+      transition: background 0.15s, color 0.15s, opacity 0.15s;
+      opacity: 0.7;
+      user-select: none;
+    }
+
+    .nav-arrow:hover { opacity: 1; background: var(--btn-hover-bg); }
+
+    #btn-prev { left: 12px; }
+    #btn-next { right: 12px; }
+
+    /* ─── LOADING ─── */
+    #loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      z-index: 30;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--progress-track);
+      border-top-color: var(--progress-fill);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #loading-text {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* ─── ERROR ─── */
+    #error-view {
+      display: none;
+      position: absolute;
+      inset: 0;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      padding: 40px;
+      text-align: center;
+      z-index: 30;
+    }
+
+    #error-view.show { display: flex; }
+
+    #error-view .err-icon { font-size: 48px; }
+
+    #error-view p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    #error-view a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* ─── BOTTOM BAR ─── */
+    #bottom-bar {
+      flex-shrink: 0;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+      background: var(--ui-bg);
+      border-top: 1px solid var(--ui-border);
+    }
+
+    #progress-track {
+      flex: 1;
+      height: 4px;
+      background: var(--progress-track);
+      border-radius: 2px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--progress-fill);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    #progress-label {
+      font-size: 11px;
+      color: var(--muted);
+      min-width: 36px;
+      text-align: right;
+    }
+
+    /* ─── MUSIC BUTTON ─── */
+    #music-btn {
+      position: relative;
+    }
+
+    #music-btn.playing {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 540px) {
+      #btn-prev { left: 4px; }
+      #btn-next { right: 4px; }
+      .font-size-label { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── TOOLBAR ─── -->
+  <div id="toolbar">
+    <div class="t-group">
+      <button class="tb-btn" onclick="goHome()">← 목록</button>
+      <button class="tb-btn icon" onclick="toggleTOC()" title="목차 열기">☰</button>
+    </div>
+
+    <div class="t-center">
+      <div id="book-title">불러오는 중…</div>
+      <div id="chapter-title"></div>
+    </div>
+
+    <div class="t-group right">
+      <button class="tb-btn icon" onclick="changeFontSize(-10)" title="글자 작게">A-</button>
+      <span class="font-size-label" id="font-label">100%</span>
+      <button class="tb-btn icon" onclick="changeFontSize(+10)" title="글자 크게">A+</button>
+      <button class="tb-btn icon" id="theme-btn" onclick="toggleTheme()" title="테마">🌙</button>
+      <button class="tb-btn icon" id="music-btn" onclick="toggleMusic()" title="배경음악" style="display:none">♪</button>
+    </div>
+  </div>
+
+  <audio id="bg-music" loop></audio>
+
+  <!-- ─── MAIN ─── -->
+  <div id="main">
+
+    <!-- TOC overlay -->
+    <div id="toc-overlay" onclick="closeTOC()"></div>
+
+    <!-- TOC Panel -->
+    <div id="toc-panel">
+      <div id="toc-head">
+        <span>목차</span>
+        <button id="toc-close" onclick="closeTOC()">✕</button>
+      </div>
+      <ul id="toc-list"></ul>
+    </div>
+
+    <!-- Reader -->
+    <div id="reader-area">
+
+      <!-- Loading -->
+      <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div id="loading-text">책을 불러오는 중…</div>
+      </div>
+
+      <!-- Error -->
+      <div id="error-view">
+        <span class="err-icon">📭</span>
+        <p id="error-msg"></p>
+      </div>
+
+      <!-- Prev / Next arrows -->
+      <button class="nav-arrow" id="btn-prev" onclick="prevPage()">&#8249;</button>
+      <div id="viewer"></div>
+      <button class="nav-arrow" id="btn-next" onclick="nextPage()">&#8250;</button>
+
+    </div>
+  </div>
+
+  <!-- ─── BOTTOM BAR ─── -->
+  <div id="bottom-bar">
+    <div id="progress-track" onclick="seekByClick(event)" title="클릭으로 이동">
+      <div id="progress-fill"></div>
+    </div>
+    <span id="progress-label">0%</span>
+  </div>
+
+  <!-- Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"></script>
+
+  <script>
+    /* ─── State ─── */
+    const params   = new URLSearchParams(location.search);
+    const bookUrl  = params.get('book');
+    let book, rendition;
+    let fontSize   = parseInt(localStorage.getItem('epub-fontsize') || '100');
+    let isDark     = localStorage.getItem('theme') === 'dark';
+    let locationsReady = false;
+    let audioEl    = document.getElementById('bg-music');
+    let musicPlaying = false;
+
+    /* ─── Apply saved theme immediately ─── */
+    if (isDark) applyDark(true);
+
+    /* ─── Boot ─── */
+    if (!bookUrl) {
+      showError('책 경로가 지정되지 않았습니다.<br><a href="index.html">← 목록으로 돌아가기</a>');
+    } else {
+      initReader(bookUrl);
+      loadBookMusic(bookUrl);
+    }
+
+    /* ─────────────────────────────────────────
+       READER INIT
+    ───────────────────────────────────────── */
+    function initReader(url) {
+      book = ePub(url);
+
+      rendition = book.renderTo('viewer', {
+        method: 'paginated',
+        width : '100%',
+        height: '100%',
+        spread: 'auto',
+        minSpreadWidth: 900,
+      });
+
+      /* Display first page */
+      const savedCfi = localStorage.getItem('epub-pos-' + btoa(url));
+      rendition.display(savedCfi || undefined)
+        .then(() => hideLoading())
+        .catch(err => showError('책을 불러오는 데 실패했습니다.<br><small>' + escHtml(err.message) + '</small><br><a href="index.html">← 목록으로 돌아가기</a>'));
+
+      /* Metadata */
+      book.loaded.metadata.then(meta => {
+        document.title = (meta.title || 'eBook') + ' — Reader';
+        document.getElementById('book-title').textContent = meta.title || '제목 없음';
+      });
+
+      /* Navigation (TOC) */
+      book.loaded.navigation.then(nav => buildTOC(nav.toc));
+
+      /* Location changes */
+      rendition.on('relocated', loc => onRelocated(loc, url));
+
+      /* Apply font & theme */
+      rendition.themes.fontSize(fontSize + '%');
+      applyThemeToContent();
+
+      /* Generate locations for progress bar (async, doesn't block) */
+      book.ready.then(() => {
+        book.locations.generate(1600).then(() => {
+          locationsReady = true;
+        });
+      });
+    }
+
+    /* ─────────────────────────────────────────
+       TOC
+    ───────────────────────────────────────── */
+    function buildTOC(items) {
+      const list = document.getElementById('toc-list');
+      list.innerHTML = '';
+      (function walk(items, depth) {
+        items.forEach(item => {
+          const li = document.createElement('li');
+          const a  = document.createElement('a');
+          a.href        = '#';
+          a.textContent = item.label.trim();
+          a.dataset.href = item.href;
+          a.style.paddingLeft = (16 + depth * 14) + 'px';
+          if (depth > 0) a.style.fontSize = '12px';
+          a.addEventListener('click', e => {
+            e.preventDefault();
+            rendition.display(item.href);
+            setActiveTOC(a);
+            closeTOC();
+          });
+          li.appendChild(a);
+          list.appendChild(li);
+          if (item.subitems && item.subitems.length) walk(item.subitems, depth + 1);
+        });
+      })(items, 0);
+    }
+
+    function setActiveTOC(activeEl) {
+      document.querySelectorAll('#toc-list a').forEach(a => a.classList.remove('active'));
+      if (activeEl) activeEl.classList.add('active');
+    }
+
+    function toggleTOC() {
+      const panel   = document.getElementById('toc-panel');
+      const overlay = document.getElementById('toc-overlay');
+      const open    = panel.classList.toggle('open');
+      overlay.classList.toggle('show', open);
+    }
+
+    function closeTOC() {
+      document.getElementById('toc-panel').classList.remove('open');
+      document.getElementById('toc-overlay').classList.remove('show');
+    }
+
+    /* ─────────────────────────────────────────
+       NAVIGATION
+    ───────────────────────────────────────── */
+    function prevPage() { if (rendition) rendition.prev(); }
+    function nextPage() { if (rendition) rendition.next(); }
+
+    function onRelocated(loc, bookUrl) {
+      if (!loc) return;
+
+      /* Progress */
+      const pct = Math.round(loc.start.percentage * 100);
+      document.getElementById('progress-fill').style.width  = pct + '%';
+      document.getElementById('progress-label').textContent = pct + '%';
+
+      /* Save position */
+      try { localStorage.setItem('epub-pos-' + btoa(bookUrl), loc.start.cfi); } catch(_) {}
+
+      /* Highlight active TOC */
+      const href = loc.start.href || '';
+      let matched = null;
+      document.querySelectorAll('#toc-list a').forEach(a => {
+        a.classList.remove('active');
+        if (href && href.endsWith(a.dataset.href)) matched = a;
+      });
+      if (matched) {
+        matched.classList.add('active');
+        document.getElementById('chapter-title').textContent = matched.textContent;
+      }
+    }
+
+    function seekByClick(e) {
+      if (!locationsReady || !book) return;
+      const bar   = document.getElementById('progress-track');
+      const ratio = Math.min(Math.max(e.offsetX / bar.offsetWidth, 0), 0.999);
+      const cfi   = book.locations.cfiFromPercentage(ratio);
+      if (cfi) rendition.display(cfi);
+    }
+
+    /* ─────────────────────────────────────────
+       FONT SIZE
+    ───────────────────────────────────────── */
+    function changeFontSize(delta) {
+      fontSize = Math.min(160, Math.max(70, fontSize + delta));
+      document.getElementById('font-label').textContent = fontSize + '%';
+      localStorage.setItem('epub-fontsize', fontSize);
+      if (rendition) rendition.themes.fontSize(fontSize + '%');
+    }
+
+    /* ─────────────────────────────────────────
+       THEME
+    ───────────────────────────────────────── */
+    function toggleTheme() {
+      isDark = !isDark;
+      applyDark(isDark);
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      applyThemeToContent();
+    }
+
+    function applyDark(dark) {
+      document.body.classList.toggle('dark', dark);
+      document.getElementById('theme-btn').textContent = dark ? '☀️' : '🌙';
+    }
+
+    function applyThemeToContent() {
+      if (!rendition) return;
+      if (isDark) {
+        rendition.themes.override('color', '#dde0e8');
+        rendition.themes.override('background', '#18192b');
+      } else {
+        rendition.themes.override('color', '#2c2c2c');
+        rendition.themes.override('background', '#f5f0e8');
+      }
+    }
+
+    /* ─────────────────────────────────────────
+       MISC
+    ───────────────────────────────────────── */
+    function goHome() { location.href = 'index.html'; }
+
+    function hideLoading() {
+      document.getElementById('loading-overlay').style.display = 'none';
+      document.getElementById('font-label').textContent = fontSize + '%';
+    }
+
+    function showError(html) {
+      document.getElementById('loading-overlay').style.display = 'none';
+      const el = document.getElementById('error-view');
+      document.getElementById('error-msg').innerHTML = html;
+      el.classList.add('show');
+    }
+
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    /* ─────────────────────────────────────────
+       MUSIC
+    ───────────────────────────────────────── */
+    async function loadBookMusic(bookPath) {
+      try {
+        const resp = await fetch('books.json');
+        if (!resp.ok) return;
+        const books = await resp.json();
+        const entry = books.find(b => b.path === bookPath);
+        if (!entry || !entry.music) return;
+
+        audioEl.src = entry.music;
+        const btn = document.getElementById('music-btn');
+        btn.style.display = '';
+
+        audioEl.play().then(() => {
+          musicPlaying = true;
+          updateMusicBtn();
+        }).catch(() => {
+          musicPlaying = false;
+          updateMusicBtn();
+        });
+      } catch (_) {}
+    }
+
+    function toggleMusic() {
+      if (!audioEl.src) return;
+      if (musicPlaying) {
+        audioEl.pause();
+        musicPlaying = false;
+      } else {
+        audioEl.play();
+        musicPlaying = true;
+      }
+      updateMusicBtn();
+    }
+
+    function updateMusicBtn() {
+      const btn = document.getElementById('music-btn');
+      if (musicPlaying) {
+        btn.textContent = '♫';
+        btn.classList.add('playing');
+        btn.title = '배경음악 끄기';
+      } else {
+        btn.textContent = '♪';
+        btn.classList.remove('playing');
+        btn.title = '배경음악 켜기';
+      }
+    }
+
+    /* Keyboard */
+    document.addEventListener('keydown', e => {
+      if (['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); nextPage(); }
+      if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); prevPage(); }
+    });
+  </script>
+</body>
+</html>
