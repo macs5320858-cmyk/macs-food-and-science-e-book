@@ -4,17 +4,17 @@
     "title": "화학",
     "author": "Macs Learning Lab",
     "cover": "",
-    "path": "books/chemistry.epub",
+    "path": "books/chemistry.pdf",
     "music": "music/chemistry.mp3",
     "tags": ["과학", "화학"]
   },
   {
-    "id": "earth",
-    "title": "지구",
+    "id": "earth-layer",
+    "title": "지구층",
     "author": "Macs Learning Lab",
     "cover": "",
-    "path": "books/earth.epub",
-    "music": "music/earth.mp3",
+    "path": "books/earth-layer.pdf",
+    "music": "music/earth-layer.mp3",
     "tags": ["과학", "지구과학"]
   },
   {
@@ -22,7 +22,7 @@
     "title": "혈액 세포",
     "author": "Macs Learning Lab",
     "cover": "",
-    "path": "books/blood-cell.epub",
+    "path": "books/blood-cell.pdf",
     "music": "music/blood-cell.mp3",
     "tags": ["과학", "생물"]
   },
@@ -31,7 +31,7 @@
     "title": "피부층",
     "author": "Macs Learning Lab",
     "cover": "",
-    "path": "books/skin-layer.epub",
+    "path": "books/skin-layer.pdf",
     "music": "music/skin-layer.mp3",
     "tags": ["과학", "생물"]
   },
@@ -40,8 +40,26 @@
     "title": "동물 세포",
     "author": "Macs Learning Lab",
     "cover": "",
-    "path": "books/animal-cell.epub",
+    "path": "books/animal-cell.pdf",
     "music": "music/animal-cell.mp3",
+    "tags": ["과학", "생물"]
+  },
+  {
+    "id": "fossils",
+    "title": "화석",
+    "author": "Macs Learning Lab",
+    "cover": "",
+    "path": "books/fossils.pdf",
+    "music": "music/fossils.mp3",
+    "tags": ["과학", "지구과학"]
+  },
+  {
+    "id": "plant-cell",
+    "title": "식물 세포",
+    "author": "Macs Learning Lab",
+    "cover": "",
+    "path": "books/plant-cell.pdf",
+    "music": "music/plant-cell.mp3",
     "tags": ["과학", "생물"]
   }
 ]
