@@ -4,149 +4,507 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>eBook Reader</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/3d-flip-book@1.9.9/css/font-awesome.min.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
 
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #f5f0e8;
-    }
+    #canvas-wrap { position: fixed; inset: 0; }
 
-    #book-wrap {
-      width: 100%;
-      height: 100vh;
-    }
-
-    /* Floating music button */
-    #music-fab {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.92);
-      border: 1px solid rgba(0, 0, 0, 0.15);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-      cursor: pointer;
-      font-size: 20px;
-      z-index: 9999;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.2s, color 0.2s;
-    }
-
-    #music-fab.playing {
-      background: rgba(74, 144, 217, 0.92);
-      color: white;
-      border-color: #4a90d9;
-    }
-
-    /* Error message */
-    #error-msg {
-      display: none;
-      padding: 60px 40px;
+    /* ── Loader ─────────────────────────────────────────────── */
+    #loader {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 14px;
+      background: #f4f1ec;
+      color: #6b5a3e;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      color: #888;
-      font-size: 14px;
-      line-height: 1.8;
+    }
+    .spinner {
+      width: 34px; height: 34px;
+      border: 3px solid rgba(107,90,62,.2);
+      border-top-color: #6b5a3e;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loader p { font-size: 13px; opacity: .75; }
+
+    /* ── Controls ───────────────────────────────────────────── */
+    #ui {
+      position: fixed; bottom: 22px; left: 0; right: 0;
+      display: flex; justify-content: center; align-items: center; gap: 14px;
+      z-index: 10;
+    }
+    .nav-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: rgba(255,255,255,.75);
+      border: 1px solid rgba(0,0,0,.12);
+      color: rgba(44,36,26,.85);
+      font-size: 19px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s, transform .1s;
+      box-shadow: 0 1px 6px rgba(0,0,0,.12);
+      backdrop-filter: blur(8px);
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: rgba(255,255,255,.95);
+      transform: scale(1.06);
+    }
+    .nav-btn:disabled { opacity: .3; cursor: default; }
+    #page-info {
+      min-width: 96px; text-align: center;
+      color: rgba(44,36,26,.5);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 12px; letter-spacing: .4px;
+      pointer-events: none;
+    }
+
+    /* ── Music FAB ──────────────────────────────────────────── */
+    #music-fab {
+      position: fixed; bottom: 76px; right: 18px;
+      width: 42px; height: 42px; border-radius: 50%;
+      background: rgba(255,255,255,.9);
+      border: 1px solid rgba(0,0,0,.12);
+      box-shadow: 0 2px 10px rgba(0,0,0,.15);
+      cursor: pointer; font-size: 18px; z-index: 9999;
+      display: none; align-items: center; justify-content: center;
+      color: rgba(44,36,26,.85);
+      transition: background .15s;
+    }
+    #music-fab.playing { background: rgba(74,144,217,.9); border-color: #4a90d9; color: #fff; }
+
+    /* ── Error ──────────────────────────────────────────────── */
+    #error-msg {
+      display: none; position: fixed; inset: 0;
+      flex-direction: column; align-items: center; justify-content: center;
+      padding: 40px; gap: 12px;
+      background: #f4f1ec;
+      color: #6b5a3e;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px; line-height: 1.8; text-align: center;
+    }
+    #error-msg code {
+      background: rgba(0,0,0,.06);
+      padding: 2px 7px; border-radius: 4px; font-size: 12px;
     }
   </style>
 </head>
 <body>
 
-  <div id="book-wrap"></div>
-  <div id="error-msg"></div>
+<div id="loader"><div class="spinner"></div><p>로딩 중…</p></div>
+<div id="canvas-wrap"></div>
 
-  <button id="music-fab" onclick="toggleMusic()" title="배경음악">♪</button>
-  <audio id="bg-music" loop></audio>
+<div id="ui">
+  <button class="nav-btn" id="btn-prev" disabled>&#8592;</button>
+  <span id="page-info"></span>
+  <button class="nav-btn" id="btn-next" disabled>&#8594;</button>
+</div>
 
-  <!-- 3D FlipBook — all from jsDelivr CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/3d-flip-book@1.9.9/js/jquery.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/3d-flip-book@1.9.9/js/html2canvas.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/3d-flip-book@1.9.9/js/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/3d-flip-book@1.9.9/js/pdf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/3d-flip-book@1.9.9/dist/flip-book.min.js"></script>
+<button id="music-fab">♪</button>
+<audio id="bg-music" loop></audio>
+<div id="error-msg"></div>
 
-  <script>
-    const CDN     = 'https://cdn.jsdelivr.net/npm/3d-flip-book@1.9.9/';
-    const params  = new URLSearchParams(location.search);
-    const bookUrl = params.get('book');
-    const audioEl = document.getElementById('bg-music');
-    let musicPlaying = false;
+<!-- PDF.js + Three.js via CDN (no jQuery, no 3d-flip-book) -->
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
-    if (!bookUrl) {
-      showError('책 경로가 지정되지 않았습니다.<br>예: <code>reader.html?book=books/chemistry.pdf</code>');
-    } else {
-      initFlipBook(bookUrl);
-      loadBookMusic(bookUrl);
-    }
+<script>
+'use strict';
 
-    function initFlipBook(url) {
-      $('#book-wrap').FlipBook({
-        pdf: url,
-        template: {
-          html:   CDN + 'templates/default-book-view.html',
-          styles: [CDN + 'css/short-white-book-view.css'],
-          links:  [],
-          script: CDN + 'js/default-book-view.js',
-          assets: CDN
-        }
-      });
-    }
+// ── PDF.js worker ──────────────────────────────────────────────────────────
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 
-    /* ── Music ── */
-    async function loadBookMusic(bookPath) {
-      try {
-        const resp = await fetch('books.json');
-        if (!resp.ok) return;
-        const books = await resp.json();
-        const entry = books.find(b => b.path === bookPath);
-        if (!entry || !entry.music) return;
+// ── Constants ──────────────────────────────────────────────────────────────
+const PAGE_W   = 2.0;   // Three.js units per page width
+const PAGE_H   = 2.8;   // Three.js units per page height
+const FLIP_MS  = 660;   // flip animation duration (ms)
+const PDF_SCALE = 2.0;  // render resolution multiplier
 
-        audioEl.src = entry.music;
-        const fab = document.getElementById('music-fab');
-        fab.style.display = 'flex';
+// ── App state ──────────────────────────────────────────────────────────────
+let pdfDoc       = null;
+let totalPages   = 0;
+let curSpread    = 0;
+let flipping     = false;
+const texCache   = {};   // pageNum → THREE.CanvasTexture
 
-        audioEl.play().then(() => {
-          musicPlaying = true;
-          updateMusicBtn();
-        }).catch(() => {
-          musicPlaying = false;
-          updateMusicBtn();
-        });
-      } catch (_) {}
-    }
+// ── Three.js handles ───────────────────────────────────────────────────────
+let renderer, scene, camera;
+let leftMesh, rightMesh;
+let flipPivot, flipFront, flipBack;
 
-    function toggleMusic() {
-      if (!audioEl.src) return;
-      if (musicPlaying) {
-        audioEl.pause();
-        musicPlaying = false;
-      } else {
-        audioEl.play();
-        musicPlaying = true;
-      }
-      updateMusicBtn();
-    }
+// ── Audio ──────────────────────────────────────────────────────────────────
+const audioEl     = document.getElementById('bg-music');
+let   musicOn     = false;
 
-    function updateMusicBtn() {
-      const btn = document.getElementById('music-fab');
-      btn.textContent = musicPlaying ? '♫' : '♪';
-      btn.classList.toggle('playing', musicPlaying);
-      btn.title = musicPlaying ? '배경음악 끄기' : '배경음악 켜기';
-    }
+// ── Entry ──────────────────────────────────────────────────────────────────
+const qp      = new URLSearchParams(location.search);
+const bookUrl = qp.get('book');
 
-    function showError(html) {
-      document.getElementById('book-wrap').style.display = 'none';
-      const el = document.getElementById('error-msg');
-      el.innerHTML = html;
-      el.style.display = 'block';
-    }
-  </script>
+if (!bookUrl) {
+  showError('책 경로가 지정되지 않았습니다.<br>예: <code>reader.html?book=books/chemistry.pdf</code>');
+} else {
+  buildScene();
+  loadPDF(bookUrl);
+  loadMusic(bookUrl);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  THREE.JS SCENE
+// ══════════════════════════════════════════════════════════════════════════
+function buildScene() {
+  const W = innerWidth, H = innerHeight;
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(W, H);
+  renderer.shadowMap.enabled = true;
+  document.getElementById('canvas-wrap').appendChild(renderer.domElement);
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xf4f1ec);
+
+  // Camera — frontal view, z distance calculated to fill screen
+  camera = new THREE.PerspectiveCamera(46, W / H, 0.1, 60);
+  fitCamera();
+
+  // Lights — soft, even for a bright scene
+  scene.add(new THREE.AmbientLight(0xfff8f0, 1.1));
+  const key = new THREE.DirectionalLight(0xfff4e8, 0.9);
+  key.position.set(2, 4, 6);
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0xe8f0ff, 0.25);
+  fill.position.set(-3, 1, 4);
+  scene.add(fill);
+
+  // Subtle card-shadow behind the open book (visible from front)
+  const shdw = new THREE.Mesh(
+    new THREE.PlaneGeometry(PAGE_W * 2 + 0.16, PAGE_H + 0.16),
+    new THREE.MeshBasicMaterial({ color: 0xc8bfb0, transparent: true, opacity: 0.45 })
+  );
+  shdw.position.set(0, 0, -0.04);
+  scene.add(shdw);
+
+  // Spine
+  const spn = new THREE.Mesh(
+    new THREE.BoxGeometry(0.06, PAGE_H, 0.018),
+    new THREE.MeshLambertMaterial({ color: 0x5a4a30 })
+  );
+  spn.position.z = -0.006;
+  scene.add(spn);
+
+  // Static page planes
+  const pgGeo = new THREE.PlaneGeometry(PAGE_W, PAGE_H);
+  const blank = () => new THREE.MeshLambertMaterial({ color: 0xf5f0e8 });
+
+  leftMesh  = new THREE.Mesh(pgGeo.clone(), blank());
+  leftMesh.position.set(-PAGE_W / 2, 0, 0);
+  scene.add(leftMesh);
+
+  rightMesh = new THREE.Mesh(pgGeo.clone(), blank());
+  rightMesh.position.set(PAGE_W / 2, 0, 0);
+  scene.add(rightMesh);
+
+  // Flip group — pivot at spine (x=0), child plane offset to x=PAGE_W/2
+  flipPivot = new THREE.Group();
+  flipPivot.position.z = 0.006;
+  scene.add(flipPivot);
+
+  const fGeo = new THREE.PlaneGeometry(PAGE_W, PAGE_H);
+  flipFront = new THREE.Mesh(fGeo.clone(), blank());
+  flipFront.position.set(PAGE_W / 2, 0, 0);
+
+  flipBack  = new THREE.Mesh(fGeo.clone(),
+    new THREE.MeshLambertMaterial({ color: 0xf5f0e8, side: THREE.BackSide }));
+  flipBack.position.set(PAGE_W / 2, 0, -0.001);
+
+  flipPivot.add(flipFront);
+  flipPivot.add(flipBack);
+  flipPivot.visible = false;
+
+  // Resize
+  window.addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    fitCamera();
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+
+  // Keyboard + touch
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') flipPage(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'PageUp')   flipPage(-1);
+  });
+  let touchX0 = 0;
+  document.addEventListener('touchstart', e => { touchX0 = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend',   e => {
+    const dx = touchX0 - e.changedTouches[0].clientX;
+    if (Math.abs(dx) > 45) flipPage(dx > 0 ? 1 : -1);
+  });
+
+  // Button events
+  document.getElementById('btn-prev').addEventListener('click', () => flipPage(-1));
+  document.getElementById('btn-next').addEventListener('click', () => flipPage(1));
+
+  // Render loop
+  renderer.setAnimationLoop(() => renderer.render(scene, camera));
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  PDF LOADING & PAGE RENDERING
+// ══════════════════════════════════════════════════════════════════════════
+async function loadPDF(url) {
+  try {
+    pdfDoc     = await pdfjsLib.getDocument(url).promise;
+    totalPages = pdfDoc.numPages;
+
+    // Render first two pages before showing anything
+    await renderPage(1);
+    if (totalPages >= 2) await renderPage(2);
+
+    curSpread = 0;
+    applySpread(0);
+    document.getElementById('loader').style.display = 'none';
+    updateUI();
+    prefetch(0);
+  } catch (err) {
+    showError('PDF를 불러오지 못했습니다.<br><code>' + err.message + '</code>');
+  }
+}
+
+async function renderPage(num) {
+  if (!pdfDoc || num < 1 || num > totalPages) return null;
+  if (texCache[num]) return texCache[num];
+
+  const page     = await pdfDoc.getPage(num);
+  const vp       = page.getViewport({ scale: PDF_SCALE });
+  const canvas   = document.createElement('canvas');
+  canvas.width   = vp.width;
+  canvas.height  = vp.height;
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  texCache[num] = tex;
+
+  // If this page is currently on screen, replace the white placeholder immediately
+  if (leftMesh && rightMesh) {
+    const [l, r] = spreadPages(curSpread);
+    if (l === num) setMeshTex(leftMesh,  num, THREE.FrontSide, false);
+    if (r === num) setMeshTex(rightMesh, num, THREE.FrontSide, false);
+  }
+
+  return tex;
+}
+
+async function prefetch(s) {
+  const nxt = s + 1;
+  if (nxt < totalSpreads()) {
+    const [l, r] = spreadPages(nxt);
+    if (l) renderPage(l);
+    if (r) renderPage(r);
+  }
+}
+
+// ── Spread helpers ─────────────────────────────────────────────────────────
+// Spread 0  →  left=null, right=page1  (cover)
+// Spread k  →  left=2k,   right=2k+1
+function spreadPages(s) {
+  if (s === 0) return [null, 1];
+  const l = s * 2, r = s * 2 + 1;
+  return [
+    l <= totalPages ? l : null,
+    r <= totalPages ? r : null,
+  ];
+}
+function totalSpreads() {
+  return Math.ceil((totalPages - 1) / 2) + 1;
+}
+
+// Apply current spread textures synchronously (only call after cache is warm)
+function applySpread(s) {
+  const [l, r] = spreadPages(s);
+  setMeshTex(leftMesh,  l, THREE.FrontSide, false);
+  setMeshTex(rightMesh, r, THREE.FrontSide, false);
+}
+
+function setMeshTex(mesh, num, side, mirror) {
+  if (!num || num < 1 || num > totalPages) {
+    // No page here (e.g. left side of cover spread) — blend with scene background
+    mesh.material = new THREE.MeshLambertMaterial({ color: 0xf4f1ec, side });
+    return;
+  }
+  if (!texCache[num]) {
+    // Page exists but texture still rendering — show white placeholder
+    mesh.material = new THREE.MeshLambertMaterial({ color: 0xffffff, side });
+    return;
+  }
+  let map = texCache[num];
+  if (mirror) {
+    map = map.clone();
+    map.wrapS = THREE.RepeatWrapping;
+    map.repeat.set(-1, 1);
+    map.offset.set(1, 0);
+    map.needsUpdate = true;
+  }
+  mesh.material = new THREE.MeshLambertMaterial({ map, side });
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  PAGE FLIP ANIMATION
+// ══════════════════════════════════════════════════════════════════════════
+//
+//  flipPivot is a Group sitting at (0,0,z) — the spine.
+//  flipFront/flipBack are child planes offset to local (+PAGE_W/2, 0, 0).
+//
+//  rotation.y = 0    → plane at world (+PAGE_W/2, 0, z)   right side
+//  rotation.y = -π   → plane at world (-PAGE_W/2, 0, z)   left side
+//  (rotation goes negative = page swings toward viewer first)
+//
+//  NEXT  (right → left):  frontTex=curRight, backTex=newLeft(mirrored)
+//                          startY=0,  endY=-π,  hide rightMesh
+//  PREV  (left → right):  frontTex=newRight,  backTex=curLeft(mirrored)
+//                          startY=-π, endY=0,   hide leftMesh
+//
+async function flipPage(dir) {
+  if (flipping) return;
+  const target = curSpread + dir;
+  if (target < 0 || target >= totalSpreads()) return;
+  flipping = true;
+
+  const [curL, curR] = spreadPages(curSpread);
+  const [newL, newR] = spreadPages(target);
+
+  // Ensure all needed textures are cached before animating
+  await Promise.all([curL, curR, newL, newR].filter(Boolean).map(n => renderPage(n)));
+
+  let frontNum, backNum, startY, endY;
+
+  if (dir === 1) {           // NEXT: right page flips to left
+    frontNum = curR; backNum = newL;
+    startY   = 0;    endY   = -Math.PI;
+    rightMesh.visible = false;
+  } else {                   // PREV: left page flips to right
+    frontNum = newR; backNum = curL;
+    startY   = -Math.PI; endY = 0;
+    leftMesh.visible = false;
+  }
+
+  setMeshTex(flipFront, frontNum, THREE.FrontSide, false);
+  setMeshTex(flipBack,  backNum,  THREE.BackSide,  true);
+
+  flipPivot.rotation.y = startY;
+  flipPivot.position.z = 0.006;
+  flipPivot.visible    = true;
+
+  // Animate pivot rotation + subtle Z lift
+  const t0 = performance.now();
+  await new Promise(resolve => {
+    (function tick() {
+      const raw   = Math.min((performance.now() - t0) / FLIP_MS, 1);
+      const eased = easeInOut(raw);
+
+      flipPivot.rotation.y = startY + (endY - startY) * eased;
+      flipPivot.position.z = 0.006 + Math.sin(raw * Math.PI) * 0.22;
+
+      if (raw < 1) { requestAnimationFrame(tick); } else { resolve(); }
+    })();
+  });
+
+  // Commit
+  flipPivot.visible    = false;
+  flipPivot.rotation.y = endY;
+  flipPivot.position.z = 0.006;
+  leftMesh.visible     = true;
+  rightMesh.visible    = true;
+
+  curSpread = target;
+  applySpread(curSpread);
+  updateUI();
+  prefetch(curSpread);
+  flipping = false;
+}
+
+// Compute camera Z so the open book (PAGE_W*2 wide, PAGE_H tall) fills the viewport.
+// Uses the limiting dimension (height or width) with a 4% margin.
+function fitCamera() {
+  const aspect      = (innerWidth || camera.aspect * innerHeight) / (innerHeight || 1);
+  const bookW       = PAGE_W * 2;
+  const bookH       = PAGE_H;
+  const fovRad      = camera.fov * Math.PI / 180;
+  const tanHalf     = Math.tan(fovRad / 2);
+  const margin      = 1.04;
+  const zByH        = (bookH / 2 / tanHalf) * margin;
+  const zByW        = (bookW / 2 / (tanHalf * aspect)) * margin;
+  camera.position.set(0, 0, Math.max(zByH, zByW));
+  camera.lookAt(0, 0, 0);
+}
+
+function easeInOut(t) {
+  return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  UI
+// ══════════════════════════════════════════════════════════════════════════
+function updateUI() {
+  const [l, r] = spreadPages(curSpread);
+  const last   = totalSpreads() - 1;
+
+  let info;
+  if (curSpread === 0)       info = `표지  ·  ${totalPages}p`;
+  else if (r && r <= totalPages) info = `${l} – ${r}  /  ${totalPages}`;
+  else                       info = `${l}  /  ${totalPages}`;
+
+  document.getElementById('page-info').textContent = info;
+  document.getElementById('btn-prev').disabled = (curSpread === 0);
+  document.getElementById('btn-next').disabled = (curSpread >= last);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  MUSIC
+// ══════════════════════════════════════════════════════════════════════════
+async function loadMusic(bookPath) {
+  try {
+    const books = await (await fetch('books.json')).json();
+    const entry = books.find(b => b.path === bookPath);
+    if (!entry?.music) return;
+    audioEl.src = entry.music;
+    const fab = document.getElementById('music-fab');
+    fab.style.display = 'flex';
+    audioEl.play()
+      .then(() => { musicOn = true;  syncMusicBtn(); })
+      .catch(() => { musicOn = false; syncMusicBtn(); });
+  } catch (_) {}
+}
+
+function toggleMusic() {
+  if (!audioEl.src) return;
+  if (musicOn) { audioEl.pause(); musicOn = false; }
+  else         { audioEl.play();  musicOn = true;  }
+  syncMusicBtn();
+}
+
+function syncMusicBtn() {
+  const btn = document.getElementById('music-fab');
+  btn.textContent = musicOn ? '♫' : '♪';
+  btn.classList.toggle('playing', musicOn);
+  btn.title = musicOn ? '배경음악 끄기' : '배경음악 켜기';
+}
+
+document.getElementById('music-fab').addEventListener('click', toggleMusic);
+
+// ══════════════════════════════════════════════════════════════════════════
+//  ERROR
+// ══════════════════════════════════════════════════════════════════════════
+function showError(html) {
+  document.getElementById('canvas-wrap').style.display = 'none';
+  document.getElementById('ui').style.display         = 'none';
+  document.getElementById('loader').style.display     = 'none';
+  const el = document.getElementById('error-msg');
+  el.innerHTML   = html;
+  el.style.display = 'flex';
+}
+</script>
 </body>
 </html>

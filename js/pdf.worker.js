@@ -1,1 +1,1 @@
-importScripts('https://cdn.jsdelivr.net/npm/3d-flip-book@1.9.9/js/pdf.worker.js');
+importScripts('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js');
