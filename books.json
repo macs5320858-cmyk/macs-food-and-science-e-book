@@ -1,14 +1,5 @@
 [
   {
-    "id": "chemistry",
-    "title": "화학",
-    "author": "Macs Learning Lab",
-    "cover": "",
-    "path": "books/chemistry.pdf",
-    "music": "music/chemistry.mp3",
-    "tags": ["과학", "화학"]
-  },
-  {
     "id": "earth-layer",
     "title": "지구층",
     "author": "Macs Learning Lab",
