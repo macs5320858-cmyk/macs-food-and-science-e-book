@@ -104,7 +104,6 @@
 <audio id="bg-music" loop></audio>
 <div id="error-msg"></div>
 
-<!-- PDF.js + Three.js via CDN (no jQuery, no 3d-flip-book) -->
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
@@ -116,17 +115,18 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 
 // ── Constants ──────────────────────────────────────────────────────────────
-const PAGE_W   = 2.0;   // Three.js units per page width
-const PAGE_H   = 2.8;   // Three.js units per page height
-const FLIP_MS  = 660;   // flip animation duration (ms)
-const PDF_SCALE = 2.0;  // render resolution multiplier
+const PAGE_W   = 2.0;
+const PAGE_H   = 2.8;
+const FLIP_MS  = 660;
+const PDF_SCALE = 2.0;
 
 // ── App state ──────────────────────────────────────────────────────────────
 let pdfDoc       = null;
 let totalPages   = 0;
 let curSpread    = 0;
 let flipping     = false;
-const texCache   = {};   // pageNum → THREE.CanvasTexture
+const texCache   = {};  // pageNum → THREE.CanvasTexture
+const inFlight   = {};  // pageNum → Promise (dedup concurrent renders)
 
 // ── Three.js handles ───────────────────────────────────────────────────────
 let renderer, scene, camera;
@@ -164,12 +164,10 @@ function buildScene() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf4f1ec);
 
-  // Camera — frontal view, z distance calculated to fill screen
   camera = new THREE.PerspectiveCamera(46, W / H, 0.1, 60);
   fitCamera();
 
-  // Lights — soft, even for a bright scene
-  scene.add(new THREE.AmbientLight(0xfff8f0, 1.1));
+  scene.add(new THREE.AmbientLight(0xfff8f0, 1.6));
   const key = new THREE.DirectionalLight(0xfff4e8, 0.9);
   key.position.set(2, 4, 6);
   scene.add(key);
@@ -177,12 +175,25 @@ function buildScene() {
   fill.position.set(-3, 1, 4);
   scene.add(fill);
 
-  // Subtle card-shadow behind the open book (visible from front)
+  // Book cover (rounded hardcover board behind the pages)
+  const cw = (PAGE_W * 2 + 0.2) / 2, ch = (PAGE_H + 0.04) / 2, cr = 0.06;
+  const coverShape = new THREE.Shape();
+  coverShape.moveTo(-cw + cr, -ch);
+  coverShape.lineTo( cw - cr, -ch);
+  coverShape.absarc( cw - cr, -ch + cr, cr, -Math.PI / 2, 0, false);
+  coverShape.lineTo( cw,  ch - cr);
+  coverShape.absarc( cw - cr,  ch - cr, cr, 0, Math.PI / 2, false);
+  coverShape.lineTo(-cw + cr,  ch);
+  coverShape.absarc(-cw + cr,  ch - cr, cr, Math.PI / 2, Math.PI, false);
+  coverShape.lineTo(-cw, -ch + cr);
+  coverShape.absarc(-cw + cr, -ch + cr, cr, Math.PI, Math.PI * 3 / 2, false);
+  const coverGeo = new THREE.ExtrudeGeometry(coverShape, { depth: 0.14, bevelEnabled: false, curveSegments: 8 });
+  coverGeo.translate(0, 0, -0.07);
   const shdw = new THREE.Mesh(
-    new THREE.PlaneGeometry(PAGE_W * 2 + 0.16, PAGE_H + 0.16),
+    coverGeo,
     new THREE.MeshBasicMaterial({ color: 0xc8bfb0, transparent: true, opacity: 0.45 })
   );
-  shdw.position.set(0, 0, -0.04);
+  shdw.position.set(0, 0, -0.08);
   scene.add(shdw);
 
   // Spine
@@ -190,8 +201,25 @@ function buildScene() {
     new THREE.BoxGeometry(0.06, PAGE_H, 0.018),
     new THREE.MeshLambertMaterial({ color: 0x5a4a30 })
   );
-  spn.position.z = -0.006;
+  spn.position.z = -0.018;
   scene.add(spn);
+
+  // ── Page-stack edge strips (left & right outer edges) ─────────────────
+  [-1, 1].forEach(side => {
+    for (let i = 0; i < 6; i++) {
+      const s = 0.92 - i * 0.025;
+      const strip = new THREE.Mesh(
+        new THREE.BoxGeometry(0.013, PAGE_H * (1 - i * 0.005), 0.003 + i * 0.001),
+        new THREE.MeshLambertMaterial({ color: new THREE.Color(s, s * 0.968, s * 0.915) })
+      );
+      strip.position.set(
+        side * (PAGE_W + 0.007 + i * 0.013),
+        0,
+        -(0.006 + i * 0.003)
+      );
+      scene.add(strip);
+    }
+  });
 
   // Static page planes
   const pgGeo = new THREE.PlaneGeometry(PAGE_W, PAGE_H);
@@ -242,11 +270,9 @@ function buildScene() {
     if (Math.abs(dx) > 45) flipPage(dx > 0 ? 1 : -1);
   });
 
-  // Button events
   document.getElementById('btn-prev').addEventListener('click', () => flipPage(-1));
   document.getElementById('btn-next').addEventListener('click', () => flipPage(1));
 
-  // Render loop
   renderer.setAnimationLoop(() => renderer.render(scene, camera));
 }
 
@@ -258,7 +284,6 @@ async function loadPDF(url) {
     pdfDoc     = await pdfjsLib.getDocument(url).promise;
     totalPages = pdfDoc.numPages;
 
-    // Render first two pages before showing anything
     await renderPage(1);
     if (totalPages >= 2) await renderPage(2);
 
@@ -267,6 +292,7 @@ async function loadPDF(url) {
     document.getElementById('loader').style.display = 'none';
     updateUI();
     prefetch(0);
+    prefetchAll(); // load all pages in the background
   } catch (err) {
     showError('PDF를 불러오지 못했습니다.<br><code>' + err.message + '</code>');
   }
@@ -275,40 +301,58 @@ async function loadPDF(url) {
 async function renderPage(num) {
   if (!pdfDoc || num < 1 || num > totalPages) return null;
   if (texCache[num]) return texCache[num];
+  if (inFlight[num]) return inFlight[num]; // reuse in-progress render
 
-  const page     = await pdfDoc.getPage(num);
-  const vp       = page.getViewport({ scale: PDF_SCALE });
-  const canvas   = document.createElement('canvas');
-  canvas.width   = vp.width;
-  canvas.height  = vp.height;
-  await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+  inFlight[num] = (async () => {
+    try {
+      const page   = await pdfDoc.getPage(num);
+      const vp     = page.getViewport({ scale: PDF_SCALE });
+      const canvas = document.createElement('canvas');
+      canvas.width  = vp.width;
+      canvas.height = vp.height;
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
 
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  texCache[num] = tex;
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      texCache[num] = tex;
 
-  // If this page is currently on screen, replace the white placeholder immediately
-  if (leftMesh && rightMesh) {
-    const [l, r] = spreadPages(curSpread);
-    if (l === num) setMeshTex(leftMesh,  num, THREE.FrontSide, false);
-    if (r === num) setMeshTex(rightMesh, num, THREE.FrontSide, false);
-  }
+      if (leftMesh && rightMesh) {
+        const [l, r] = spreadPages(curSpread);
+        if (l === num) setMeshTex(leftMesh,  num, THREE.FrontSide, false);
+        if (r === num) setMeshTex(rightMesh, num, THREE.FrontSide, false);
+      }
 
-  return tex;
+      return tex;
+    } finally {
+      delete inFlight[num];
+    }
+  })();
+
+  return inFlight[num];
 }
 
+// Prefetch next 5 spreads (≈10 pages) immediately
 async function prefetch(s) {
-  const nxt = s + 1;
-  if (nxt < totalSpreads()) {
-    const [l, r] = spreadPages(nxt);
-    if (l) renderPage(l);
-    if (r) renderPage(r);
+  for (let i = 1; i <= 5; i++) {
+    const nxt = s + i;
+    if (nxt < totalSpreads()) {
+      const [l, r] = spreadPages(nxt);
+      if (l) renderPage(l);
+      if (r) renderPage(r);
+    }
+  }
+}
+
+// Load ALL remaining pages sequentially in the background
+async function prefetchAll() {
+  for (let n = 3; n <= totalPages; n++) {
+    if (!texCache[n]) await renderPage(n);
+    // Yield to browser each page so UI stays responsive
+    await new Promise(r => setTimeout(r, 30));
   }
 }
 
 // ── Spread helpers ─────────────────────────────────────────────────────────
-// Spread 0  →  left=null, right=page1  (cover)
-// Spread k  →  left=2k,   right=2k+1
 function spreadPages(s) {
   if (s === 0) return [null, 1];
   const l = s * 2, r = s * 2 + 1;
@@ -321,7 +365,6 @@ function totalSpreads() {
   return Math.ceil((totalPages - 1) / 2) + 1;
 }
 
-// Apply current spread textures synchronously (only call after cache is warm)
 function applySpread(s) {
   const [l, r] = spreadPages(s);
   setMeshTex(leftMesh,  l, THREE.FrontSide, false);
@@ -330,12 +373,10 @@ function applySpread(s) {
 
 function setMeshTex(mesh, num, side, mirror) {
   if (!num || num < 1 || num > totalPages) {
-    // No page here (e.g. left side of cover spread) — blend with scene background
     mesh.material = new THREE.MeshLambertMaterial({ color: 0xf4f1ec, side });
     return;
   }
   if (!texCache[num]) {
-    // Page exists but texture still rendering — show white placeholder
     mesh.material = new THREE.MeshLambertMaterial({ color: 0xffffff, side });
     return;
   }
@@ -353,87 +394,73 @@ function setMeshTex(mesh, num, side, mirror) {
 // ══════════════════════════════════════════════════════════════════════════
 //  PAGE FLIP ANIMATION
 // ══════════════════════════════════════════════════════════════════════════
-//
-//  flipPivot is a Group sitting at (0,0,z) — the spine.
-//  flipFront/flipBack are child planes offset to local (+PAGE_W/2, 0, 0).
-//
-//  rotation.y = 0    → plane at world (+PAGE_W/2, 0, z)   right side
-//  rotation.y = -π   → plane at world (-PAGE_W/2, 0, z)   left side
-//  (rotation goes negative = page swings toward viewer first)
-//
-//  NEXT  (right → left):  frontTex=curRight, backTex=newLeft(mirrored)
-//                          startY=0,  endY=-π,  hide rightMesh
-//  PREV  (left → right):  frontTex=newRight,  backTex=curLeft(mirrored)
-//                          startY=-π, endY=0,   hide leftMesh
-//
 async function flipPage(dir) {
   if (flipping) return;
   const target = curSpread + dir;
   if (target < 0 || target >= totalSpreads()) return;
   flipping = true;
 
-  const [curL, curR] = spreadPages(curSpread);
-  const [newL, newR] = spreadPages(target);
+  try {
+    const [curL, curR] = spreadPages(curSpread);
+    const [newL, newR] = spreadPages(target);
 
-  // Ensure all needed textures are cached before animating
-  await Promise.all([curL, curR, newL, newR].filter(Boolean).map(n => renderPage(n)));
+    // Wait for all four pages to be fully rendered before animating
+    await Promise.all([curL, curR, newL, newR].filter(Boolean).map(n => renderPage(n)));
 
-  let frontNum, backNum, startY, endY;
+    let frontNum, backNum, startY, endY;
 
-  if (dir === 1) {           // NEXT: right page flips to left
-    frontNum = curR; backNum = newL;
-    startY   = 0;    endY   = -Math.PI;
-    rightMesh.visible = false;
-  } else {                   // PREV: left page flips to right
-    frontNum = newR; backNum = curL;
-    startY   = -Math.PI; endY = 0;
-    leftMesh.visible = false;
+    if (dir === 1) {
+      frontNum = curR; backNum = newL;
+      startY   = 0;    endY   = -Math.PI;
+      setMeshTex(rightMesh, newR, THREE.FrontSide, false);
+    } else {
+      frontNum = newR; backNum = curL;
+      startY   = -Math.PI; endY = 0;
+      setMeshTex(leftMesh, newL, THREE.FrontSide, false);
+    }
+
+    setMeshTex(flipFront, frontNum, THREE.FrontSide, false);
+    setMeshTex(flipBack,  backNum,  THREE.BackSide,  true);
+
+    flipPivot.rotation.y = startY;
+    flipPivot.position.z = 0.006;
+    flipPivot.visible    = true;
+
+    const t0 = performance.now();
+    await new Promise(resolve => {
+      (function tick() {
+        const raw   = Math.min((performance.now() - t0) / FLIP_MS, 1);
+        const eased = easeInOut(raw);
+
+        flipPivot.rotation.y = startY + (endY - startY) * eased;
+        flipPivot.position.z = 0.006 + Math.sin(raw * Math.PI) * 0.22;
+
+        if (raw < 1) { requestAnimationFrame(tick); } else { resolve(); }
+      })();
+    });
+
+    flipPivot.visible    = false;
+    flipPivot.rotation.y = endY;
+    flipPivot.position.z = 0.006;
+    leftMesh.visible     = true;
+    rightMesh.visible    = true;
+
+    curSpread = target;
+    applySpread(curSpread);
+    updateUI();
+    prefetch(curSpread);
+  } finally {
+    flipping = false;
   }
-
-  setMeshTex(flipFront, frontNum, THREE.FrontSide, false);
-  setMeshTex(flipBack,  backNum,  THREE.BackSide,  true);
-
-  flipPivot.rotation.y = startY;
-  flipPivot.position.z = 0.006;
-  flipPivot.visible    = true;
-
-  // Animate pivot rotation + subtle Z lift
-  const t0 = performance.now();
-  await new Promise(resolve => {
-    (function tick() {
-      const raw   = Math.min((performance.now() - t0) / FLIP_MS, 1);
-      const eased = easeInOut(raw);
-
-      flipPivot.rotation.y = startY + (endY - startY) * eased;
-      flipPivot.position.z = 0.006 + Math.sin(raw * Math.PI) * 0.22;
-
-      if (raw < 1) { requestAnimationFrame(tick); } else { resolve(); }
-    })();
-  });
-
-  // Commit
-  flipPivot.visible    = false;
-  flipPivot.rotation.y = endY;
-  flipPivot.position.z = 0.006;
-  leftMesh.visible     = true;
-  rightMesh.visible    = true;
-
-  curSpread = target;
-  applySpread(curSpread);
-  updateUI();
-  prefetch(curSpread);
-  flipping = false;
 }
 
-// Compute camera Z so the open book (PAGE_W*2 wide, PAGE_H tall) fills the viewport.
-// Uses the limiting dimension (height or width) with a 4% margin.
 function fitCamera() {
   const aspect      = (innerWidth || camera.aspect * innerHeight) / (innerHeight || 1);
   const bookW       = PAGE_W * 2;
   const bookH       = PAGE_H;
   const fovRad      = camera.fov * Math.PI / 180;
   const tanHalf     = Math.tan(fovRad / 2);
-  const margin      = 1.04;
+  const margin      = 1.08;
   const zByH        = (bookH / 2 / tanHalf) * margin;
   const zByW        = (bookW / 2 / (tanHalf * aspect)) * margin;
   camera.position.set(0, 0, Math.max(zByH, zByW));
