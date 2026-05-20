@@ -1,110 +1,206 @@
- # 📚 eBook Library — GitHub Pages 배포 가이드
+# Macs Learning Lab — eBook 관리 가이드
 
-## 파일 구조
-
-```
-your-repo/
-├── index.html        ← 도서 목록 페이지
-├── reader.html       ← epub 리더 페이지
-├── books.json        ← 책 목록 설정 파일
-└── books/            ← epub 파일 보관 폴더
-    ├── book1.epub
-    ├── book2.epub
-    └── covers/       ← (선택) 표지 이미지
-        ├── book1.jpg
-        └── book2.jpg
-```
+> 이 문서는 개발자가 아닌 분도 eBook을 추가·수정·삭제할 수 있도록 작성되었습니다.  
+> GitHub 계정만 있으면 됩니다. 별도 프로그램 설치는 필요 없습니다.
 
 ---
 
-## 1. GitHub 저장소 설정
+## 목차
 
-1. GitHub에서 새 저장소 생성 (예: `my-ebook-library`)
-2. 위 파일 구조대로 파일 업로드
-3. `books/` 폴더에 epub 파일 업로드
+1. [전체 구조 이해하기](#1-전체-구조-이해하기)
+2. [GitHub에 로그인하기](#2-github에-로그인하기)
+3. [책 추가하기](#3-책-추가하기)
+4. [책 삭제하기](#4-책-삭제하기)
+5. [책 정보 수정하기](#5-책-정보-수정하기)
+6. [배경음악 추가·교체·삭제하기](#6-배경음악-추가교체삭제하기)
+7. [변경 후 확인하기](#7-변경-후-확인하기)
+8. [자주 묻는 질문](#8-자주-묻는-질문)
 
 ---
 
-## 2. books.json 수정
+## 1. 전체 구조 이해하기
 
-책을 추가하거나 수정할 때는 `books.json`을 편집합니다.
+이 저장소에서 핵심 파일은 세 가지입니다.
+
+| 파일 / 폴더 | 역할 |
+|---|---|
+| `books/` 폴더 | PDF 파일들이 들어있는 폴더 |
+| `music/` 폴더 | 배경음악 MP3 파일들이 들어있는 폴더 |
+| `books.json` | 책 목록 설정 파일 (제목, 경로 등을 기록) |
+
+**작동 원리:**  
+웹사이트는 `books.json`을 읽어서 책 목록을 보여줍니다.  
+PDF 파일만 올린다고 자동으로 목록에 나타나지 않습니다.  
+**PDF 업로드 + `books.json` 수정**, 이 두 가지를 함께 해야 합니다.
+
+---
+
+## 2. GitHub에 로그인하기
+
+1. [github.com](https://github.com) 접속
+2. **`Sign in with Google`** 클릭 → **맥스러닝랩 공용 구글 계정**으로 로그인
+3. 상단 검색창 또는 북마크로 이 저장소(`macs-food-and-science-e-book`)를 엽니다
+4. 이후 모든 작업은 이 저장소 페이지 안에서 진행합니다
+
+> **공용 계정 정보는 별도로 안전하게 보관하세요.** 외부에 공유하지 마십시오.
+
+---
+
+## 3. 책 추가하기
+
+책을 추가하려면 **두 단계**를 순서대로 진행합니다.
+
+### 3-1. PDF 파일 올리기
+
+1. 저장소 메인 페이지에서 **`books`** 폴더를 클릭합니다
+2. 오른쪽 위 **`Add file`** → **`Upload files`** 클릭
+3. PDF 파일을 드래그하거나 `choose your files`로 선택합니다
+4. 파일 이름은 **영문 소문자와 하이픈(-)만** 사용하세요  
+   예: `solar-system.pdf` (O) / `태양계.pdf` (X) / `Solar System.pdf` (X)
+5. 페이지 아래 **`Commit changes`** 버튼 클릭 → 업로드 완료
+
+### 3-2. books.json에 책 정보 추가하기
+
+1. 저장소 메인 페이지에서 **`books.json`** 파일을 클릭합니다
+2. 오른쪽 위 **연필 아이콘(Edit this file)** 클릭
+3. 파일 맨 아래 마지막 `}` 뒤에 다음을 추가합니다
+
+```json
+,
+{
+  "id": "solar-system",
+  "title": "태양계",
+  "author": "Macs Learning Lab",
+  "cover": "",
+  "path": "books/solar-system.pdf",
+  "music": "",
+  "tags": ["과학", "우주"]
+}
+```
+
+**주의사항:**
+- `id`: 영문 소문자와 하이픈만 사용, 다른 책과 겹치면 안 됩니다
+- `title`: 웹사이트에 표시될 한글 제목
+- `path`: `"books/"` 뒤에 3-1에서 올린 파일명 그대로 입력
+- `music`: 배경음악이 없으면 `""` 그대로 두세요
+- 마지막 책에는 앞에 `,`를 붙이지 않습니다
+
+4. 페이지 오른쪽 위 **`Commit changes...`** 버튼 클릭
+5. 팝업에서 다시 **`Commit changes`** 클릭 → 저장 완료
+
+#### books.json 전체 구조 예시
 
 ```json
 [
   {
-    "id": "book1",
-    "title": "책 제목",
-    "author": "저자 이름",
-    "description": "책 소개 한 줄",
-    "cover": "books/covers/book1.jpg",
-    "path": "books/book1.epub",
-    "tags": ["소설", "판타지"]
+    "id": "earth-layer",
+    "title": "지구층",
+    "author": "Macs Learning Lab",
+    "cover": "",
+    "path": "books/earth-layer.pdf",
+    "music": "music/earth-layer.mp3",
+    "tags": ["과학", "지구과학"]
+  },
+  {
+    "id": "solar-system",
+    "title": "태양계",
+    "author": "Macs Learning Lab",
+    "cover": "",
+    "path": "books/solar-system.pdf",
+    "music": "",
+    "tags": ["과학", "우주"]
   }
 ]
 ```
 
-| 필드 | 설명 | 필수 |
-|------|------|------|
-| `id` | 고유 식별자 | ✅ |
-| `title` | 책 제목 | ✅ |
-| `author` | 저자 | - |
-| `description` | 소개 문구 | - |
-| `cover` | 표지 이미지 경로 (없으면 자동 색상) | - |
-| `path` | epub 파일 경로 | ✅ |
-| `tags` | 태그 배열 | - |
+항목과 항목 사이에는 반드시 `,`가 있어야 하고, **마지막 항목 뒤에는 `,`가 없어야** 합니다.
 
 ---
 
-## 3. GitHub Pages 활성화
+## 4. 책 삭제하기
 
-1. 저장소 → **Settings** → **Pages**
-2. Source: **Deploy from a branch**
-3. Branch: `main` / `(root)` 선택 → **Save**
-4. 몇 분 후 `https://[계정명].github.io/[저장소명]/` 접속 확인
+책을 삭제할 때도 **두 단계**가 필요합니다.
+
+### 4-1. books.json에서 해당 책 항목 제거하기
+
+1. `books.json` 파일을 열고 연필 아이콘 클릭
+2. 삭제할 책의 `{` 부터 `}` 까지 전체를 선택해서 지웁니다
+3. 지운 자리 앞뒤의 `,` 가 남아있으면 함께 정리해줍니다  
+   (항목 사이에 `,`가 하나만 있어야 합니다)
+4. `Commit changes...` → `Commit changes` 클릭
+
+### 4-2. PDF 파일 삭제하기 (선택사항)
+
+파일을 남겨둬도 웹사이트에는 표시되지 않지만, 용량 관리를 위해 삭제를 권장합니다.
+
+1. `books` 폴더에서 해당 PDF 파일 클릭
+2. 오른쪽 위 **점 세 개 메뉴(`···`)** 클릭 → **`Delete file`** 선택
+3. `Commit changes...` → `Commit changes` 클릭
 
 ---
 
-## 4. 아임웹 iframe 삽입
+## 5. 책 정보 수정하기
 
-GitHub Pages 배포 후, 아임웹 코드 위젯에 아래처럼 삽입:
+제목이나 저자 등을 바꾸고 싶을 때:
 
-```html
-<iframe 
-  src="https://[계정명].github.io/[저장소명]/" 
-  width="100%" 
-  height="700px" 
-  style="border:none;">
-</iframe>
+1. `books.json` 파일을 열고 연필 아이콘 클릭
+2. 수정할 값을 찾아서 직접 편집합니다
+3. `Commit changes...` → `Commit changes` 클릭
+
+PDF 파일 자체를 교체하고 싶을 때:
+
+1. 새 PDF를 같은 파일명으로 `books` 폴더에 업로드합니다  
+   (같은 이름으로 올리면 기존 파일이 덮어씌워집니다)
+2. `books.json`은 수정하지 않아도 됩니다
+
+---
+
+## 6. 배경음악 추가·교체·삭제하기
+
+### 추가하기
+
+1. MP3 파일을 `music` 폴더에 업로드합니다  
+   파일명은 영문 소문자와 하이픈만 사용: `solar-system.mp3`
+2. `books.json`에서 해당 책의 `"music"` 값을 수정합니다
+
+```json
+"music": "music/solar-system.mp3"
 ```
 
-특정 책 바로 열기:
-```html
-<iframe 
-  src="https://[계정명].github.io/[저장소명]/reader.html?book=books/book1.epub" 
-  width="100%" 
-  height="700px" 
-  style="border:none;">
-</iframe>
+### 삭제하기
+
+1. `books.json`에서 해당 책의 `"music"` 값을 `""` 으로 비워줍니다
+
+```json
+"music": ""
 ```
 
----
-
-## 리더 기능
-
-| 기능 | 설명 |
-|------|------|
-| ☰ 목차 | 챕터 목록 표시 및 이동 |
-| A- / A+ | 글자 크기 조절 (70% ~ 160%) |
-| 🌙 / ☀️ | 다크 / 라이트 모드 전환 |
-| ← → 버튼 | 페이지 이동 |
-| 키보드 ←→ | 방향키로 페이지 이동 |
-| 진행률 바 | 클릭으로 원하는 위치로 이동 |
-| 읽던 위치 저장 | 브라우저 LocalStorage에 자동 저장 |
+2. 필요하다면 `music` 폴더에서 MP3 파일도 삭제합니다
 
 ---
 
-## 주의사항
+## 7. 변경 후 확인하기
 
-- epub 파일이 **같은 도메인**(GitHub Pages)에 있어야 CORS 없이 동작합니다.
-- 외부 URL의 epub은 해당 서버가 CORS를 허용해야 합니다.
-- epub 파일 크기가 크면 로딩이 느릴 수 있습니다.
+GitHub에 변경사항을 저장(Commit)하면 보통 **1~3분 후** 웹사이트에 반영됩니다.
+
+- 웹사이트 주소: `https://[계정명].github.io/macs-e-book/`
+- 반영이 안 된다면 브라우저에서 **강력 새로고침**: Mac은 `Cmd + Shift + R`, Windows는 `Ctrl + Shift + R`
+
+---
+
+## 8. QnA
+
+**Q. 책 목록에 새 책이 안 보여요**  
+A. `books.json`을 수정했는지 확인하세요. PDF만 올려서는 목록에 나타나지 않습니다. 또한 저장 후 1~3분 기다린 뒤 강력 새로고침해보세요.
+
+**Q. books.json 저장 후 사이트가 흰 화면이 돼요**  
+A. JSON 문법 오류입니다. 가장 흔한 원인은 `,` 위치 실수입니다. 항목 사이에 `,`가 있어야 하고 마지막 항목 뒤에는 없어야 합니다. [jsonlint.com](https://jsonlint.com)에 전체 내용을 붙여넣어 오류 위치를 확인할 수 있습니다.
+
+**Q. PDF 파일명에 한글을 써도 되나요?**  
+A. 권장하지 않습니다. 영문 소문자와 하이픈(`-`)만 사용해야 URL에서 문제가 생기지 않습니다.
+
+**Q. 책 순서를 바꾸고 싶어요**  
+A. `books.json`에서 항목들의 순서를 바꾸면 웹사이트 목록 순서도 함께 바뀝니다.
+
+**Q. 배경음악이 자동재생이 안 돼요**  
+A. 브라우저 정책상 자동재생이 차단될 수 있습니다. 사용자가 화면 오른쪽 아래 음표 버튼을 눌러 직접 재생할 수 있습니다.
