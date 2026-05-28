@@ -14,29 +14,65 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
       padding: 40px 24px;
       position: relative;
     }
     h1 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
-    p.sub { font-size: 13px; color: #888; margin-bottom: 32px; }
-    ul { list-style: none; display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 360px; }
-    li a {
-      display: block;
-      padding: 12px 18px;
-      background: #fff;
-      border: 1px solid #e0dbd4;
-      border-radius: 10px;
-      text-decoration: none;
-      color: #2c2c2c;
-      font-size: 14px;
-      font-weight: 500;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-      transition: box-shadow 0.15s;
-    }
-    li a:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
+    p.sub { font-size: 13px; color: #888; margin-bottom: 28px; }
 
-    /* ── Hidden admin trigger: top-right corner ── */
+    /* ── Breadcrumb navigation ── */
+    .breadcrumb {
+      display: flex; align-items: center; gap: 4px;
+      width: 100%; max-width: 420px;
+      margin-bottom: 16px; font-size: 13px; color: #888;
+      flex-wrap: wrap;
+    }
+    .breadcrumb a {
+      color: #8b7355; text-decoration: none; font-weight: 500;
+      cursor: pointer;
+    }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb .sep { color: #ccc; margin: 0 2px; }
+    .breadcrumb .current { color: #2c2c2c; font-weight: 600; }
+
+    /* ── Content list ── */
+    .content-list {
+      width: 100%; max-width: 420px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .folder-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 18px;
+      background: #fff; border: 1px solid #e0dbd4;
+      border-radius: 10px; cursor: pointer;
+      transition: box-shadow .15s, background .15s;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .folder-item:hover { box-shadow: 0 3px 10px rgba(0,0,0,.12); background: #faf8f5; }
+    .folder-item .folder-icon { font-size: 22px; line-height: 1; }
+    .folder-item .folder-info { flex: 1; }
+    .folder-item .folder-name { font-size: 15px; font-weight: 600; color: #2c2c2c; }
+    .folder-item .folder-count { font-size: 11px; color: #aaa; margin-top: 2px; }
+    .folder-item .folder-arrow { color: #ccc; font-size: 16px; }
+
+    .book-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 18px;
+      background: #fff; border: 1px solid #e0dbd4;
+      border-radius: 10px; text-decoration: none; color: #2c2c2c;
+      font-size: 14px; font-weight: 500;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      transition: box-shadow .15s;
+    }
+    .book-item:hover { box-shadow: 0 3px 10px rgba(0,0,0,.12); }
+    .book-item .book-icon { font-size: 18px; line-height: 1; }
+    .book-item span { flex: 1; }
+    .book-item .book-title { flex: 1; }
+    .book-item .book-arrow { color: #bbb; text-align: end; }
+
+    .empty-msg { font-size: 13px; color: #bbb; text-align: center; padding: 24px 0; }
+
+    /* ── Hidden admin trigger ── */
     #admin-trigger {
       position: fixed; top: 0; right: 0;
       width: 60px; height: 60px;
@@ -79,6 +115,7 @@
       font-size: 14px; margin-bottom: 12px;
       background: #faf9f7;
     }
+    .modal-box select { appearance: auto; }
     .modal-box input[type="file"] {
       margin-bottom: 12px; font-size: 13px;
     }
@@ -99,19 +136,37 @@
     .actions { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
 
     /* ── Admin panel ── */
-    .admin-item {
+    .admin-section { margin-bottom: 20px; }
+    .admin-section h3 { font-size: 14px; margin-bottom: 10px; }
+    .admin-cat-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; margin-bottom: 4px;
+      background: #faf9f7; border: 1px solid #e8e4dc; border-radius: 8px;
+    }
+    .admin-cat-item .name { flex: 1; font-size: 13px; font-weight: 500; }
+    .admin-cat-item .parent-label { font-size: 11px; color: #aaa; }
+    .admin-book-item {
       display: flex; align-items: center; gap: 10px;
       padding: 10px 12px; margin-bottom: 8px;
       background: #faf9f7; border: 1px solid #e8e4dc; border-radius: 10px;
     }
-    .admin-item .info { flex: 1; }
-    .admin-item .title { font-size: 14px; font-weight: 500; }
-    .admin-item .meta { font-size: 11px; color: #999; }
-    .admin-item .btn-group { display: flex; gap: 6px; }
+    .admin-book-item .info { flex: 1; }
+    .admin-book-item .title { font-size: 14px; font-weight: 500; }
+    .admin-book-item .meta { font-size: 11px; color: #999; }
+    .admin-book-item .btn-group { display: flex; gap: 6px; }
     .msg { font-size: 13px; color: #c0392b; margin-top: 6px; min-height: 18px; }
     .msg.ok { color: #27ae60; }
     .tag { display: inline-block; padding: 2px 8px; border-radius: 6px; background: #eee8dd; font-size: 11px; margin: 2px 2px; }
     .upload-status { font-size: 12px; color: #888; margin-top: 4px; }
+    .tab-bar { display: flex; gap: 0; margin-bottom: 18px; border-bottom: 2px solid #e0dbd4; }
+    .tab-btn {
+      padding: 8px 16px; border: none; background: none;
+      font-size: 13px; font-weight: 500; color: #999; cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -2px;
+    }
+    .tab-btn.active { color: #5a4a30; border-bottom-color: #5a4a30; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
   </style>
 </head>
 <body>
@@ -120,7 +175,9 @@
 
 <h1>Macs Learning Lab</h1>
 <p class="sub">eBook Library</p>
-<ul id="book-list"></ul>
+
+<div class="breadcrumb" id="breadcrumb"></div>
+<div class="content-list" id="content-list"></div>
 
 <!-- ════════════════════════════════════════════ -->
 <!--  LOGIN MODAL                                 -->
@@ -145,36 +202,70 @@
 <!-- ════════════════════════════════════════════ -->
 <div class="modal-overlay" id="admin-modal">
   <div class="modal-box" style="max-width:620px;">
-    <h2>📚 관리자 패널 <span style="float:right; display:inline-flex; gap:6px;"><button class="btn btn-ghost btn-sm" id="admin-close">닫기</button><button class="btn btn-ghost btn-sm" id="admin-logout">로그아웃</button></span></h2>
+    <h2 style="display:flex;justify-content:space-between;align-items:center;">
+      관리자 패널
+      <span style="display:inline-flex;gap:6px;">
+        <button class="btn btn-ghost btn-sm" id="admin-close">닫기</button>
+        <button class="btn btn-ghost btn-sm" id="admin-logout">로그아웃</button>
+      </span>
+    </h2>
 
-    <!-- Add / Edit book form -->
-    <div id="book-form" style="margin-bottom:18px; padding:14px; background:#f9f7f4; border-radius:10px;">
-      <h3 style="font-size:14px; margin-bottom:10px;" id="form-title">새 책 추가</h3>
-      <input type="hidden" id="edit-id">
-      <label>ID (영문 소문자 + 하이픈)</label>
-      <input type="text" id="f-id" placeholder="solar-system">
-      <label>제목</label>
-      <input type="text" id="f-title" placeholder="태양계">
-      <label>저자</label>
-      <input type="text" id="f-author" placeholder="Macs Learning Lab" value="Macs Learning Lab">
-      <label>태그 (쉼표로 구분)</label>
-      <input type="text" id="f-tags" placeholder="과학, 우주">
-      <label>PDF 파일</label>
-      <input type="file" id="f-pdf" accept=".pdf">
-      <div class="upload-status" id="pdf-status"></div>
-      <label>배경음악 파일 (선택)</label>
-      <input type="file" id="f-music" accept=".mp3">
-      <div class="upload-status" id="music-status"></div>
-      <div class="msg" id="form-msg"></div>
-      <div class="actions">
-        <button class="btn btn-ghost" id="form-cancel">취소</button>
-        <button class="btn btn-primary" id="form-submit">저장</button>
-      </div>
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="tab-books">책 관리</button>
+      <button class="tab-btn" data-tab="tab-categories">카테고리 관리</button>
     </div>
 
-    <!-- Book list -->
-    <h3 style="font-size:14px; margin-bottom:10px;">책 목록</h3>
-    <div id="admin-book-list"></div>
+    <!-- Tab: Books -->
+    <div class="tab-content active" id="tab-books">
+      <div id="book-form" style="margin-bottom:18px; padding:14px; background:#f9f7f4; border-radius:10px;">
+        <h3 style="font-size:14px; margin-bottom:10px;" id="form-title">새 책 추가</h3>
+        <input type="hidden" id="edit-id">
+        <label>ID (영문 소문자 + 하이픈)</label>
+        <input type="text" id="f-id" placeholder="solar-system">
+        <label>제목</label>
+        <input type="text" id="f-title" placeholder="태양계">
+        <label>저자</label>
+        <input type="text" id="f-author" placeholder="Macs Learning Lab" value="Macs Learning Lab">
+        <label>카테고리</label>
+        <select id="f-category"><option value="">— 없음 —</option></select>
+        <label>태그 (쉼표로 구분)</label>
+        <input type="text" id="f-tags" placeholder="과학, 우주">
+        <label>PDF 파일</label>
+        <input type="file" id="f-pdf" accept=".pdf">
+        <div class="upload-status" id="pdf-status"></div>
+        <label>배경음악 파일 (선택)</label>
+        <input type="file" id="f-music" accept=".mp3">
+        <div class="upload-status" id="music-status"></div>
+        <div class="msg" id="form-msg"></div>
+        <div class="actions">
+          <button class="btn btn-ghost" id="form-cancel">취소</button>
+          <button class="btn btn-primary" id="form-submit">저장</button>
+        </div>
+      </div>
+      <h3 style="font-size:14px; margin-bottom:10px;">책 목록</h3>
+      <div id="admin-book-list"></div>
+    </div>
+
+    <!-- Tab: Categories -->
+    <div class="tab-content" id="tab-categories">
+      <div id="cat-form" style="margin-bottom:18px; padding:14px; background:#f9f7f4; border-radius:10px;">
+        <h3 style="font-size:14px; margin-bottom:10px;" id="cat-form-title">새 카테고리 추가</h3>
+        <input type="hidden" id="cat-edit-id">
+        <label>카테고리 ID (영문 소문자 + 하이픈)</label>
+        <input type="text" id="cat-f-id" placeholder="earth-science">
+        <label>카테고리 이름</label>
+        <input type="text" id="cat-f-name" placeholder="지구과학">
+        <label>상위 카테고리 (선택)</label>
+        <select id="cat-f-parent"><option value="">— 최상위 —</option></select>
+        <div class="msg" id="cat-form-msg"></div>
+        <div class="actions">
+          <button class="btn btn-ghost" id="cat-form-cancel">취소</button>
+          <button class="btn btn-primary" id="cat-form-submit">저장</button>
+        </div>
+      </div>
+      <h3 style="font-size:14px; margin-bottom:10px;">카테고리 목록</h3>
+      <div id="admin-cat-list"></div>
+    </div>
   </div>
 </div>
 
@@ -202,8 +293,10 @@
 //  State
 // ══════════════════════════════════════════════
 let books = [];
+let categories = [];
 let adminSession = null;
 let pendingDeleteId = null;
+let pendingDeleteType = null;
 
 // ══════════════════════════════════════════════
 //  Init
@@ -215,7 +308,8 @@ async function init() {
     await loadBooksFallback();
     return;
   }
-  await loadBooks();
+  await Promise.all([loadCategories(), loadBooks()]);
+  renderNav();
   setupAdminTrigger();
   setupLoginModal();
   setupAdminPanel();
@@ -224,22 +318,27 @@ async function init() {
 }
 
 // ══════════════════════════════════════════════
-//  Book list rendering
+//  Data loading
 // ══════════════════════════════════════════════
 async function loadBooks() {
   try {
-    const { data, error } = await sb
-      .from('books')
-      .select('*')
-      .order('sort_order', { ascending: true });
+    const { data, error } = await sb.from('books').select('*').order('sort_order', { ascending: true });
     if (error) throw error;
     books = data || [];
   } catch (e) {
-    console.error('Supabase load failed, falling back:', e);
-    await loadBooksFallback();
-    return;
+    console.error('Supabase books load failed:', e);
   }
-  renderBookList();
+}
+
+async function loadCategories() {
+  try {
+    const { data, error } = await sb.from('categories').select('*').order('sort_order', { ascending: true });
+    if (error) throw error;
+    categories = data || [];
+  } catch (e) {
+    console.error('Supabase categories load failed:', e);
+    categories = [];
+  }
 }
 
 async function loadBooksFallback() {
@@ -249,46 +348,126 @@ async function loadBooksFallback() {
   } catch (e) {
     books = [];
   }
-  renderBookList();
-}
-
-function renderBookList() {
-  const ul = document.getElementById('book-list');
-  ul.innerHTML = '';
-  books.forEach(b => {
-    const li = document.createElement('li');
-    const a  = document.createElement('a');
-    const pdfUrl = b.path.startsWith('http') ? b.path
-      : (b.path.startsWith('books/') ? b.path : 'books/' + b.path);
-    a.href = 'reader.html?book=' + encodeURIComponent(pdfUrl);
-    a.textContent = b.title;
-    a.target = '_blank';
-    li.appendChild(a);
-    ul.appendChild(li);
-  });
+  categories = [];
+  renderNav();
 }
 
 // ══════════════════════════════════════════════
-//  5-click admin trigger (top-right corner)
+//  Navigation state
+// ══════════════════════════════════════════════
+let navStack = []; // [{id: null, name: '전체'}, {id: 'science', name: '과학'}, ...]
+
+function navigateTo(catId) {
+  if (catId === null) {
+    navStack = [];
+  } else {
+    const idx = navStack.findIndex(n => n.id === catId);
+    if (idx >= 0) {
+      navStack = navStack.slice(0, idx + 1);
+    } else {
+      const cat = categories.find(c => c.id === catId);
+      if (cat) navStack.push({ id: catId, name: cat.name });
+    }
+  }
+  renderNav();
+}
+
+function renderNav() {
+  const currentId = navStack.length > 0 ? navStack[navStack.length - 1].id : null;
+  const childCats = categories.filter(c => c.parent_id === currentId).sort((a, b) => a.sort_order - b.sort_order);
+  const childBooks = books.filter(b => b.category_id === currentId).sort((a, b) => a.sort_order - b.sort_order);
+
+  // Breadcrumb
+  const bc = document.getElementById('breadcrumb');
+  bc.innerHTML = '';
+
+  const allLink = document.createElement('a');
+  allLink.textContent = '전체';
+  allLink.addEventListener('click', () => navigateTo(null));
+  bc.appendChild(allLink);
+
+  navStack.forEach((item, i) => {
+    bc.appendChild(Object.assign(document.createElement('span'), { className: 'sep', textContent: '›' }));
+    if (i < navStack.length - 1) {
+      const link = document.createElement('a');
+      link.textContent = item.name;
+      link.addEventListener('click', () => navigateTo(item.id));
+      bc.appendChild(link);
+    } else {
+      const cur = document.createElement('span');
+      cur.className = 'current';
+      cur.textContent = item.name;
+      bc.appendChild(cur);
+    }
+  });
+
+  // Content list
+  const list = document.getElementById('content-list');
+  list.innerHTML = '';
+
+  if (childCats.length === 0 && childBooks.length === 0) {
+    list.innerHTML = '<div class="empty-msg">이 카테고리에 책이 없습니다.</div>';
+    return;
+  }
+
+  childCats.forEach(cat => {
+    const count = countBooksRecursive(cat.id);
+    const div = document.createElement('div');
+    div.className = 'folder-item';
+    div.innerHTML = `
+      <div class="folder-info">
+        <div class="folder-name">${escHtml(cat.name)}</div>
+        <div class="folder-count">${count}권</div>
+      </div>
+      <span class="folder-arrow">›</span>
+    `;
+    div.addEventListener('click', () => navigateTo(cat.id));
+    list.appendChild(div);
+  });
+
+  childBooks.forEach(b => {
+    const a = document.createElement('a');
+    a.className = 'book-item';
+    a.href = 'reader.html?book=' + encodeURIComponent(
+      b.path.startsWith('http') ? b.path : (b.path.startsWith('books/') ? b.path : 'books/' + b.path)
+    );
+    a.target = '_blank';
+    a.innerHTML = `<span class="book-title">${escHtml(b.title)}</span><span class="book-arrow">›</span>`;
+    list.appendChild(a);
+  });
+}
+
+function countBooksRecursive(catId) {
+  let count = books.filter(b => b.category_id === catId).length;
+  const children = categories.filter(c => c.parent_id === catId);
+  children.forEach(c => { count += countBooksRecursive(c.id); });
+  return count;
+}
+
+function countCategoriesRecursive(catId) {
+  let count = 0;
+  const children = categories.filter(c => c.parent_id === catId);
+  children.forEach(c => {
+    count += 1 + countCategoriesRecursive(c.id);
+  });
+  return count;
+}
+
+// ══════════════════════════════════════════════
+//  5-click admin trigger
 // ══════════════════════════════════════════════
 function setupAdminTrigger() {
   const trigger = document.getElementById('admin-trigger');
   let clicks = 0;
   let timer = null;
-
   trigger.addEventListener('click', () => {
     clicks++;
     clearTimeout(timer);
     timer = setTimeout(() => { clicks = 0; }, 1500);
-
     if (clicks >= 5) {
       clicks = 0;
       clearTimeout(timer);
-      if (adminSession) {
-        openAdminPanel();
-      } else {
-        openLoginModal();
-      }
+      if (adminSession) { openAdminPanel(); } else { openLoginModal(); }
     }
   });
 }
@@ -306,31 +485,20 @@ function setupLoginModal() {
     if (e.key === 'Enter') handleLogin();
   });
 }
-
 function openLoginModal() {
   document.getElementById('login-modal').classList.add('active');
   document.getElementById('login-email').focus();
 }
-
 function closeLoginModal() {
   document.getElementById('login-modal').classList.remove('active');
   document.getElementById('login-msg').textContent = '';
 }
-
 async function handleLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass  = document.getElementById('login-pass').value;
   const msgEl = document.getElementById('login-msg');
-
-  if (!email || !pass) {
-    msgEl.textContent = '이메일과 비밀번호를 입력하세요.';
-    msgEl.className = 'msg';
-    return;
-  }
-
-  msgEl.textContent = '로그인 중…';
-  msgEl.className = 'msg';
-
+  if (!email || !pass) { msgEl.textContent = '이메일과 비밀번호를 입력하세요.'; msgEl.className = 'msg'; return; }
+  msgEl.textContent = '로그인 중…'; msgEl.className = 'msg';
   try {
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) throw error;
@@ -344,19 +512,13 @@ async function handleLogin() {
   }
 }
 
-// ══════════════════════════════════════════════
-//  Restore session from sessionStorage
-// ══════════════════════════════════════════════
 async function restoreSession() {
   const token = sessionStorage.getItem('admin_token');
   if (!token) return;
   try {
-    const { data, error } = await sb.auth.getSession();
-    if (data.session) {
-      adminSession = data.session;
-    } else {
-      sessionStorage.removeItem('admin_token');
-    }
+    const { data } = await sb.auth.getSession();
+    if (data.session) adminSession = data.session;
+    else sessionStorage.removeItem('admin_token');
   } catch (_) {}
 }
 
@@ -368,17 +530,28 @@ function setupAdminPanel() {
   document.getElementById('admin-close').addEventListener('click', closeAdminPanel);
   document.getElementById('form-cancel').addEventListener('click', resetForm);
   document.getElementById('form-submit').addEventListener('click', handleFormSubmit);
+  document.getElementById('cat-form-cancel').addEventListener('click', resetCatForm);
+  document.getElementById('cat-form-submit').addEventListener('click', handleCatFormSubmit);
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+    });
+  });
 }
 
 function openAdminPanel() {
   document.getElementById('admin-modal').classList.add('active');
+  populateCategorySelects();
   renderAdminBookList();
+  renderAdminCatList();
 }
-
 function closeAdminPanel() {
   document.getElementById('admin-modal').classList.remove('active');
 }
-
 async function handleLogout() {
   await sb.auth.signOut();
   adminSession = null;
@@ -387,27 +560,52 @@ async function handleLogout() {
 }
 
 // ══════════════════════════════════════════════
-//  Render admin book list
+//  Category dropdown population
+// ══════════════════════════════════════════════
+function populateCategorySelects() {
+  ['f-category', 'cat-f-parent'].forEach(selectId => {
+    const sel = document.getElementById(selectId);
+    const currentVal = sel.value;
+    const placeholder = sel.querySelector('option');
+    sel.innerHTML = '';
+    if (placeholder) sel.appendChild(placeholder);
+    buildCategoryOptions(null, 0).forEach(opt => sel.appendChild(opt));
+    sel.value = currentVal;
+  });
+}
+
+function buildCategoryOptions(parentId, depth) {
+  const result = [];
+  const children = categories.filter(c => c.parent_id === parentId).sort((a, b) => a.sort_order - b.sort_order);
+  children.forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat.id;
+    opt.textContent = '\u00A0\u00A0'.repeat(depth) + cat.name;
+    result.push(opt);
+    result.push(...buildCategoryOptions(cat.id, depth + 1));
+  });
+  return result;
+}
+
+// ══════════════════════════════════════════════
+//  Admin book list
 // ══════════════════════════════════════════════
 function renderAdminBookList() {
   const container = document.getElementById('admin-book-list');
   container.innerHTML = '';
-
   if (books.length === 0) {
     container.innerHTML = '<p style="font-size:13px;color:#999;">책이 없습니다.</p>';
     return;
   }
-
   books.forEach(b => {
     const div = document.createElement('div');
-    div.className = 'admin-item';
-
+    div.className = 'admin-book-item';
+    const catName = categories.find(c => c.id === b.category_id)?.name || '';
     const tagsHtml = (b.tags || []).map(t => '<span class="tag">' + escHtml(t) + '</span>').join('');
-
     div.innerHTML = `
       <div class="info">
         <div class="title">${escHtml(b.title)}</div>
-        <div class="meta">${escHtml(b.author)} · ${tagsHtml}</div>
+        <div class="meta">${catName ? escHtml(catName) + ' · ' : ''}${escHtml(b.author)}${tagsHtml ? ' · ' + tagsHtml : ''}</div>
       </div>
       <div class="btn-group">
         <button class="btn btn-ghost btn-sm" data-edit="${escAttr(b.id)}">수정</button>
@@ -415,40 +613,60 @@ function renderAdminBookList() {
       </div>
     `;
     div.querySelector('[data-edit]').addEventListener('click', () => startEdit(b.id));
-    div.querySelector('[data-del]').addEventListener('click', () => confirmDelete(b.id));
+    div.querySelector('[data-del]').addEventListener('click', () => confirmDelete(b.id, 'book'));
     container.appendChild(div);
   });
 }
 
-function escHtml(s) {
-  const d = document.createElement('div');
-  d.textContent = s || '';
-  return d.innerHTML;
-}
-function escAttr(s) {
-  return (s || '').replace(/"/g, '&quot;');
+// ══════════════════════════════════════════════
+//  Admin category list
+// ══════════════════════════════════════════════
+function renderAdminCatList() {
+  const container = document.getElementById('admin-cat-list');
+  container.innerHTML = '';
+  if (categories.length === 0) {
+    container.innerHTML = '<p style="font-size:13px;color:#999;">카테고리가 없습니다.</p>';
+    return;
+  }
+  const sorted = [...categories].sort((a, b) => a.sort_order - b.sort_order);
+  sorted.forEach(cat => {
+    const parentName = categories.find(c => c.id === cat.parent_id)?.name || '';
+    const div = document.createElement('div');
+    div.className = 'admin-cat-item';
+    div.innerHTML = `
+      <span class="name">${escHtml(cat.name)}</span>
+      ${parentName ? '<span class="parent-label">↳ ' + escHtml(parentName) + '</span>' : ''}
+      <div class="btn-group" style="display:flex;gap:4px;">
+        <button class="btn btn-ghost btn-sm" data-cat-edit="${escAttr(cat.id)}">수정</button>
+        <button class="btn btn-danger btn-sm" data-cat-del="${escAttr(cat.id)}">삭제</button>
+      </div>
+    `;
+    div.querySelector('[data-cat-edit]').addEventListener('click', () => startEditCat(cat.id));
+    div.querySelector('[data-cat-del]').addEventListener('click', () => confirmDelete(cat.id, 'category'));
+    container.appendChild(div);
+  });
 }
 
 // ══════════════════════════════════════════════
-//  Add / Edit form
+//  Book form
 // ══════════════════════════════════════════════
 function startEdit(id) {
   const b = books.find(x => x.id === id);
   if (!b) return;
-
+  populateCategorySelects();
   document.getElementById('form-title').textContent = '책 수정';
   document.getElementById('edit-id').value = id;
   document.getElementById('f-id').value = b.id;
   document.getElementById('f-id').disabled = true;
   document.getElementById('f-title').value = b.title;
   document.getElementById('f-author').value = b.author;
+  document.getElementById('f-category').value = b.category_id || '';
   document.getElementById('f-tags').value = (b.tags || []).join(', ');
   document.getElementById('form-msg').textContent = '';
-
-  const hasSupabasePath = b.path && b.path.startsWith('http');
-  document.getElementById('pdf-status').textContent = hasSupabasePath ? '현재 PDF 등록됨 (새 파일로 교체 가능)' : '현재 경로: ' + b.path;
-  const hasSupabaseMusic = b.music && b.music.startsWith('http');
-  document.getElementById('music-status').textContent = b.music ? (hasSupabaseMusic ? '현재 음악 등록됨 (새 파일로 교체 가능)' : '현재 경로: ' + b.music) : '';
+  const hasHttp = b.path && b.path.startsWith('http');
+  document.getElementById('pdf-status').textContent = hasHttp ? '현재 PDF 등록됨 (새 파일로 교체 가능)' : '현재 경로: ' + b.path;
+  const hasHttpMusic = b.music && b.music.startsWith('http');
+  document.getElementById('music-status').textContent = b.music ? (hasHttpMusic ? '현재 음악 등록됨 (새 파일로 교체 가능)' : '현재 경로: ' + b.music) : '';
 }
 
 function resetForm() {
@@ -458,6 +676,7 @@ function resetForm() {
   document.getElementById('f-id').disabled = false;
   document.getElementById('f-title').value = '';
   document.getElementById('f-author').value = 'Macs Learning Lab';
+  document.getElementById('f-category').value = '';
   document.getElementById('f-tags').value = '';
   document.getElementById('f-pdf').value = '';
   document.getElementById('f-music').value = '';
@@ -471,24 +690,21 @@ async function handleFormSubmit() {
   msgEl.textContent = '';
   msgEl.className = 'msg';
 
-  const editId = document.getElementById('edit-id').value;
-  const id     = document.getElementById('f-id').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
-  const title  = document.getElementById('f-title').value.trim();
-  const author = document.getElementById('f-author').value.trim() || 'Macs Learning Lab';
-  const tagsRaw = document.getElementById('f-tags').value.trim();
-  const tags   = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
-  const pdfFile  = document.getElementById('f-pdf').files[0] || null;
+  const editId    = document.getElementById('edit-id').value;
+  const id        = document.getElementById('f-id').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+  const title     = document.getElementById('f-title').value.trim();
+  const author    = document.getElementById('f-author').value.trim() || 'Macs Learning Lab';
+  const categoryId = document.getElementById('f-category').value || null;
+  const tagsRaw   = document.getElementById('f-tags').value.trim();
+  const tags      = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const pdfFile   = document.getElementById('f-pdf').files[0] || null;
   const musicFile = document.getElementById('f-music').files[0] || null;
 
   if (!id) { msgEl.textContent = 'ID를 입력하세요.'; return; }
   if (!title) { msgEl.textContent = '제목을 입력하세요.'; return; }
 
   const isEdit = !!editId;
-
-  if (!isEdit && !pdfFile) {
-    msgEl.textContent = '새 책 추가 시 PDF 파일이 필요합니다.';
-    return;
-  }
+  if (!isEdit && !pdfFile) { msgEl.textContent = '새 책 추가 시 PDF 파일이 필요합니다.'; return; }
 
   try {
     msgEl.textContent = '저장 중…';
@@ -504,53 +720,118 @@ async function handleFormSubmit() {
     }
 
     if (pdfFile) {
-      const pdfStoragePath = `pdfs/${id}.pdf`;
+      const sp = `pdfs/${id}.pdf`;
       msgEl.textContent = 'PDF 업로드 중…';
-      const { error: pdfErr } = await sb.storage
-        .from('media')
-        .upload(pdfStoragePath, pdfFile, { upsert: true, contentType: 'application/pdf' });
-      if (pdfErr) throw pdfErr;
-      pdfPath = supabaseStorageUrl('media', pdfStoragePath);
+      const { error: e } = await sb.storage.from('media').upload(sp, pdfFile, { upsert: true, contentType: 'application/pdf' });
+      if (e) throw e;
+      pdfPath = supabaseStorageUrl('media', sp);
     }
-
     if (musicFile) {
-      const musicStoragePath = `music/${id}.mp3`;
+      const sp = `music/${id}.mp3`;
       msgEl.textContent = '음악 업로드 중…';
-      const { error: musicErr } = await sb.storage
-        .from('media')
-        .upload(musicStoragePath, musicFile, { upsert: true, contentType: 'audio/mpeg' });
-      if (musicErr) throw musicErr;
-      musicPath = supabaseStorageUrl('media', musicStoragePath);
+      const { error: e } = await sb.storage.from('media').upload(sp, musicFile, { upsert: true, contentType: 'audio/mpeg' });
+      if (e) throw e;
+      musicPath = supabaseStorageUrl('media', sp);
     }
 
-    const record = {
-      id,
-      title,
-      author,
-      cover: '',
-      path: pdfPath,
-      music: musicPath,
-      tags,
-    };
-
+    const record = { id, title, author, cover: '', path: pdfPath, music: musicPath, tags, category_id: categoryId };
     msgEl.textContent = 'DB 저장 중…';
 
     if (isEdit) {
       const { error } = await sb.from('books').update(record).eq('id', editId);
       if (error) throw error;
     } else {
-      const maxOrder = books.reduce((m, b) => Math.max(m, b.sort_order || 0), 0);
-      record.sort_order = maxOrder + 1;
+      record.sort_order = books.reduce((m, b) => Math.max(m, b.sort_order || 0), 0) + 1;
       const { error } = await sb.from('books').insert(record);
       if (error) throw error;
     }
 
     msgEl.textContent = '저장 완료!';
     msgEl.className = 'msg ok';
-
     resetForm();
-    await loadBooks();
+    await Promise.all([loadBooks(), loadCategories()]);
+    renderNav();
     renderAdminBookList();
+    populateCategorySelects();
+  } catch (e) {
+    msgEl.textContent = '오류: ' + (e.message || '알 수 없는 오류');
+    msgEl.className = 'msg';
+  }
+}
+
+// ══════════════════════════════════════════════
+//  Category form
+// ══════════════════════════════════════════════
+function startEditCat(id) {
+  const cat = categories.find(c => c.id === id);
+  if (!cat) return;
+  populateCategorySelects();
+  document.getElementById('cat-form-title').textContent = '카테고리 수정';
+  document.getElementById('cat-edit-id').value = id;
+  document.getElementById('cat-f-id').value = cat.id;
+  document.getElementById('cat-f-id').disabled = true;
+  document.getElementById('cat-f-name').value = cat.name;
+  document.getElementById('cat-f-parent').value = cat.parent_id || '';
+  document.getElementById('cat-form-msg').textContent = '';
+}
+
+function resetCatForm() {
+  document.getElementById('cat-form-title').textContent = '새 카테고리 추가';
+  document.getElementById('cat-edit-id').value = '';
+  document.getElementById('cat-f-id').value = '';
+  document.getElementById('cat-f-id').disabled = false;
+  document.getElementById('cat-f-name').value = '';
+  document.getElementById('cat-f-parent').value = '';
+  document.getElementById('cat-form-msg').textContent = '';
+}
+
+async function handleCatFormSubmit() {
+  const msgEl = document.getElementById('cat-form-msg');
+  msgEl.textContent = '';
+  msgEl.className = 'msg';
+
+  const editId   = document.getElementById('cat-edit-id').value;
+  const id       = document.getElementById('cat-f-id').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+  const name     = document.getElementById('cat-f-name').value.trim();
+  const parentId = document.getElementById('cat-f-parent').value || null;
+
+  if (!id) { msgEl.textContent = 'ID를 입력하세요.'; return; }
+  if (!name) { msgEl.textContent = '이름을 입력하세요.'; return; }
+  if (id === parentId) { msgEl.textContent = '자기 자신을 상위로 지정할 수 없습니다.'; return; }
+
+  // Check circular parent reference
+  if (parentId) {
+    let ancestor = parentId;
+    const visited = new Set();
+    while (ancestor) {
+      if (ancestor === id) { msgEl.textContent = '순환 참조가 발생합니다.'; return; }
+      if (visited.has(ancestor)) break;
+      visited.add(ancestor);
+      const parent = categories.find(c => c.id === ancestor);
+      ancestor = parent ? parent.parent_id : null;
+    }
+  }
+
+  const isEdit = !!editId;
+
+  try {
+    const record = { id, name, parent_id: parentId };
+    if (isEdit) {
+      const { error } = await sb.from('categories').update(record).eq('id', editId);
+      if (error) throw error;
+    } else {
+      record.sort_order = categories.reduce((m, c) => Math.max(m, c.sort_order || 0), 0) + 1;
+      const { error } = await sb.from('categories').insert(record);
+      if (error) throw error;
+    }
+
+    msgEl.textContent = '저장 완료!';
+    msgEl.className = 'msg ok';
+    resetCatForm();
+    await Promise.all([loadBooks(), loadCategories()]);
+    renderNav();
+    renderAdminCatList();
+    populateCategorySelects();
   } catch (e) {
     msgEl.textContent = '오류: ' + (e.message || '알 수 없는 오류');
     msgEl.className = 'msg';
@@ -564,39 +845,70 @@ function setupConfirmModal() {
   document.getElementById('confirm-cancel').addEventListener('click', () => {
     document.getElementById('confirm-modal').classList.remove('active');
     pendingDeleteId = null;
+    pendingDeleteType = null;
   });
   document.getElementById('confirm-ok').addEventListener('click', executeDelete);
 }
 
-function confirmDelete(id) {
-  const b = books.find(x => x.id === id);
-  if (!b) return;
+function confirmDelete(id, type) {
   pendingDeleteId = id;
-  document.getElementById('confirm-text').textContent = `"${b.title}"을(를) 삭제하시겠습니까?`;
+  pendingDeleteType = type;
+  const name = type === 'book'
+    ? (books.find(b => b.id === id)?.title || id)
+    : (categories.find(c => c.id === id)?.name || id);
+  const descendantCount = countCategoriesRecursive(id);
+  const bookCount = countBooksRecursive(id);
+  let extra = '';
+  if (descendantCount > 0) {
+    extra += `\n하위 카테고리 ${descendantCount}개도 함께 삭제됩니다.`;
+  }
+  if (bookCount > 0) {
+    extra += `\n속한 책 ${bookCount}권의 카테고리 연결이 해제됩니다.`;
+  }
+  document.getElementById('confirm-text').textContent = `"${name}"을(를) 삭제하시겠습니까?${extra}`;
   document.getElementById('confirm-modal').classList.add('active');
 }
 
 async function executeDelete() {
   if (!pendingDeleteId) return;
   const id = pendingDeleteId;
+  const type = pendingDeleteType;
 
   try {
-    const b = books.find(x => x.id === id);
+    if (type === 'book') {
+      await sb.storage.from('media').remove([`pdfs/${id}.pdf`]);
+      await sb.storage.from('media').remove([`music/${id}.mp3`]);
+      const { error } = await sb.from('books').delete().eq('id', id);
+      if (error) throw error;
+    } else {
+      const { error } = await sb.from('categories').delete().eq('id', id);
+      if (error) throw error;
+    }
 
-    await sb.storage.from('media').remove([`pdfs/${id}.pdf`]);
-    await sb.storage.from('media').remove([`music/${id}.mp3`]);
-
-    const { error } = await sb.from('books').delete().eq('id', id);
-    if (error) throw error;
-
-    await loadBooks();
+    await Promise.all([loadBooks(), loadCategories()]);
+    renderNav();
     renderAdminBookList();
+    renderAdminCatList();
+    populateCategorySelects();
   } catch (e) {
     alert('삭제 실패: ' + e.message);
   }
 
   document.getElementById('confirm-modal').classList.remove('active');
   pendingDeleteId = null;
+  pendingDeleteType = null;
+}
+
+// ══════════════════════════════════════════════
+//  Utils
+// ══════════════════════════════════════════════
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+function escAttr(s) {
+  return (s || '').replace(/"/g, '&quot;');
 }
 
 // ══════════════════════════════════════════════

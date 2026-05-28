@@ -21,7 +21,8 @@ No other commands exist (no lint, test, typecheck, format).
 | `reader.html` | PDF reader with 3D page-flip — loads music from Supabase DB (falls back to `books.json`), **all logic is inline JS** |
 | `books.json` | Legacy book catalog fallback — each entry: `id`, `title`, `author`, `cover`, `path`, `music`, `tags` |
 | `js/supabase-config.js` | Supabase URL + anon key — **must be configured before use** |
-| `supabase-setup.sql` | One-time SQL to create tables, storage bucket, RLS policies, and seed data |
+| `supabase-setup.sql` | Full SQL to create tables (books + categories), storage bucket, RLS policies, and seed data (for fresh projects) |
+| `supabase-migration-categories.sql` | Migration SQL to add categories table and category_id column (for existing DBs) |
 | `books/` | Local PDF files (legacy, now stored in Supabase Storage) |
 | `music/` | Local MP3 files (legacy, now stored in Supabase Storage) |
 
@@ -29,6 +30,8 @@ No other commands exist (no lint, test, typecheck, format).
 
 - Click top-right corner 5 times → opens Supabase Auth login modal
 - After login: CRUD for books (add/edit/delete) with PDF & music file upload to Supabase Storage
+- Category management: create/edit/delete categories with unlimited nesting (parent_id self-reference)
+- Books are assigned to categories via `category_id`; books without a category appear at root level
 - Files stored at `media/pdfs/<id>.pdf` and `media/music/<id>.mp3`
 - Session stored in `sessionStorage` (lost on tab close)
 
@@ -52,7 +55,7 @@ When upgrading, update **all** `<script src>` URLs **and** any version-specific 
 ## Supabase setup (first time)
 
 1. Create a Supabase project at supabase.com
-2. Run `supabase-setup.sql` in the Supabase SQL Editor
+2. Run `supabase-setup.sql` in the Supabase SQL Editor (for fresh projects) or `supabase-migration-categories.sql` (for existing DBs)
 3. In Supabase Dashboard → Authentication → create an admin user (email/password)
 4. Edit `js/supabase-config.js` — replace `YOUR_PROJECT_ID` and `YOUR_ANON_KEY` with your project's URL and anon key
 5. Optionally upload existing PDFs/MP3s from `books/` and `music/` to Supabase Storage (bucket `media`, folders `pdfs/` and `music/`)
