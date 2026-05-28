@@ -16,9 +16,10 @@
       align-items: center;
       justify-content: center;
       padding: 40px 24px;
+      position: relative;
     }
     h1 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
-    p  { font-size: 13px; color: #888; margin-bottom: 32px; }
+    p.sub { font-size: 13px; color: #888; margin-bottom: 32px; }
     ul { list-style: none; display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 360px; }
     li a {
       display: block;
@@ -34,27 +35,574 @@
       transition: box-shadow 0.15s;
     }
     li a:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
+
+    /* ── Hidden admin trigger: top-right corner ── */
+    #admin-trigger {
+      position: fixed; top: 0; right: 0;
+      width: 60px; height: 60px;
+      cursor: default; z-index: 9998;
+    }
+
+    /* ── Modal overlay ── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 10000;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+
+    .modal-box {
+      background: #fff;
+      border-radius: 14px;
+      padding: 28px 24px;
+      width: 90%; max-width: 520px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,.2);
+    }
+    .modal-box h2 {
+      font-size: 17px; font-weight: 600;
+      margin-bottom: 18px;
+    }
+    .modal-box label {
+      display: block; font-size: 13px; font-weight: 500;
+      color: #555; margin-bottom: 4px;
+    }
+    .modal-box input[type="text"],
+    .modal-box input[type="password"],
+    .modal-box input[type="email"],
+    .modal-box select {
+      width: 100%; padding: 10px 12px;
+      border: 1px solid #d5d0c8; border-radius: 8px;
+      font-size: 14px; margin-bottom: 12px;
+      background: #faf9f7;
+    }
+    .modal-box input[type="file"] {
+      margin-bottom: 12px; font-size: 13px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 9px 18px; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      border: none; cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-primary { background: #5a4a30; color: #fff; }
+    .btn-primary:hover { background: #4a3a20; }
+    .btn-danger { background: #c0392b; color: #fff; }
+    .btn-danger:hover { background: #a93226; }
+    .btn-ghost { background: transparent; color: #666; border: 1px solid #d5d0c8; }
+    .btn-ghost:hover { background: #f5f3f0; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .actions { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
+
+    /* ── Admin panel ── */
+    .admin-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; margin-bottom: 8px;
+      background: #faf9f7; border: 1px solid #e8e4dc; border-radius: 10px;
+    }
+    .admin-item .info { flex: 1; }
+    .admin-item .title { font-size: 14px; font-weight: 500; }
+    .admin-item .meta { font-size: 11px; color: #999; }
+    .admin-item .btn-group { display: flex; gap: 6px; }
+    .msg { font-size: 13px; color: #c0392b; margin-top: 6px; min-height: 18px; }
+    .msg.ok { color: #27ae60; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 6px; background: #eee8dd; font-size: 11px; margin: 2px 2px; }
+    .upload-status { font-size: 12px; color: #888; margin-top: 4px; }
   </style>
 </head>
 <body>
-  <h1>Macs Learning Lab</h1>
-  <ul id="book-list"></ul>
 
-  <script>
-    fetch('books.json')
-      .then(r => r.json())
-      .then(books => {
-        const ul = document.getElementById('book-list');
-        books.forEach(b => {
-          const li = document.createElement('li');
-          const a  = document.createElement('a');
-          a.href = 'reader.html?book=' + encodeURIComponent(b.path);
-          a.textContent = b.title;
-          a.target = '_blank';
-          li.appendChild(a);
-          ul.appendChild(li);
-        });
-      });
-  </script>
+<div id="admin-trigger"></div>
+
+<h1>Macs Learning Lab</h1>
+<p class="sub">eBook Library</p>
+<ul id="book-list"></ul>
+
+<!-- ════════════════════════════════════════════ -->
+<!--  LOGIN MODAL                                 -->
+<!-- ════════════════════════════════════════════ -->
+<div class="modal-overlay" id="login-modal">
+  <div class="modal-box">
+    <h2>관리자 로그인</h2>
+    <label for="login-email">이메일</label>
+    <input type="email" id="login-email" placeholder="admin@example.com">
+    <label for="login-pass">비밀번호</label>
+    <input type="password" id="login-pass" placeholder="••••••••">
+    <div class="msg" id="login-msg"></div>
+    <div class="actions">
+      <button class="btn btn-ghost" id="login-cancel">취소</button>
+      <button class="btn btn-primary" id="login-submit">로그인</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!--  ADMIN PANEL MODAL                           -->
+<!-- ════════════════════════════════════════════ -->
+<div class="modal-overlay" id="admin-modal">
+  <div class="modal-box" style="max-width:620px;">
+    <h2>📚 관리자 패널 <span style="float:right; display:inline-flex; gap:6px;"><button class="btn btn-ghost btn-sm" id="admin-close">닫기</button><button class="btn btn-ghost btn-sm" id="admin-logout">로그아웃</button></span></h2>
+
+    <!-- Add / Edit book form -->
+    <div id="book-form" style="margin-bottom:18px; padding:14px; background:#f9f7f4; border-radius:10px;">
+      <h3 style="font-size:14px; margin-bottom:10px;" id="form-title">새 책 추가</h3>
+      <input type="hidden" id="edit-id">
+      <label>ID (영문 소문자 + 하이픈)</label>
+      <input type="text" id="f-id" placeholder="solar-system">
+      <label>제목</label>
+      <input type="text" id="f-title" placeholder="태양계">
+      <label>저자</label>
+      <input type="text" id="f-author" placeholder="Macs Learning Lab" value="Macs Learning Lab">
+      <label>태그 (쉼표로 구분)</label>
+      <input type="text" id="f-tags" placeholder="과학, 우주">
+      <label>PDF 파일</label>
+      <input type="file" id="f-pdf" accept=".pdf">
+      <div class="upload-status" id="pdf-status"></div>
+      <label>배경음악 파일 (선택)</label>
+      <input type="file" id="f-music" accept=".mp3">
+      <div class="upload-status" id="music-status"></div>
+      <div class="msg" id="form-msg"></div>
+      <div class="actions">
+        <button class="btn btn-ghost" id="form-cancel">취소</button>
+        <button class="btn btn-primary" id="form-submit">저장</button>
+      </div>
+    </div>
+
+    <!-- Book list -->
+    <h3 style="font-size:14px; margin-bottom:10px;">책 목록</h3>
+    <div id="admin-book-list"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!--  CONFIRM DELETE MODAL                         -->
+<!-- ════════════════════════════════════════════ -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal-box" style="max-width:360px;">
+    <h2>삭제 확인</h2>
+    <p id="confirm-text" style="font-size:14px; margin-bottom:14px;"></p>
+    <div class="actions">
+      <button class="btn btn-ghost" id="confirm-cancel">취소</button>
+      <button class="btn btn-danger" id="confirm-ok">삭제</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-config.js"></script>
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════
+//  State
+// ══════════════════════════════════════════════
+let books = [];
+let adminSession = null;
+let pendingDeleteId = null;
+
+// ══════════════════════════════════════════════
+//  Init
+// ══════════════════════════════════════════════
+async function init() {
+  const ok = initSupabase();
+  if (!ok) {
+    console.warn('Supabase not configured, falling back to books.json');
+    await loadBooksFallback();
+    return;
+  }
+  await loadBooks();
+  setupAdminTrigger();
+  setupLoginModal();
+  setupAdminPanel();
+  setupConfirmModal();
+  restoreSession();
+}
+
+// ══════════════════════════════════════════════
+//  Book list rendering
+// ══════════════════════════════════════════════
+async function loadBooks() {
+  try {
+    const { data, error } = await sb
+      .from('books')
+      .select('*')
+      .order('sort_order', { ascending: true });
+    if (error) throw error;
+    books = data || [];
+  } catch (e) {
+    console.error('Supabase load failed, falling back:', e);
+    await loadBooksFallback();
+    return;
+  }
+  renderBookList();
+}
+
+async function loadBooksFallback() {
+  try {
+    const res = await fetch('books.json');
+    books = await res.json();
+  } catch (e) {
+    books = [];
+  }
+  renderBookList();
+}
+
+function renderBookList() {
+  const ul = document.getElementById('book-list');
+  ul.innerHTML = '';
+  books.forEach(b => {
+    const li = document.createElement('li');
+    const a  = document.createElement('a');
+    const pdfUrl = b.path.startsWith('http') ? b.path
+      : (b.path.startsWith('books/') ? b.path : 'books/' + b.path);
+    a.href = 'reader.html?book=' + encodeURIComponent(pdfUrl);
+    a.textContent = b.title;
+    a.target = '_blank';
+    li.appendChild(a);
+    ul.appendChild(li);
+  });
+}
+
+// ══════════════════════════════════════════════
+//  5-click admin trigger (top-right corner)
+// ══════════════════════════════════════════════
+function setupAdminTrigger() {
+  const trigger = document.getElementById('admin-trigger');
+  let clicks = 0;
+  let timer = null;
+
+  trigger.addEventListener('click', () => {
+    clicks++;
+    clearTimeout(timer);
+    timer = setTimeout(() => { clicks = 0; }, 1500);
+
+    if (clicks >= 5) {
+      clicks = 0;
+      clearTimeout(timer);
+      if (adminSession) {
+        openAdminPanel();
+      } else {
+        openLoginModal();
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════════
+//  Login modal
+// ══════════════════════════════════════════════
+function setupLoginModal() {
+  document.getElementById('login-cancel').addEventListener('click', closeLoginModal);
+  document.getElementById('login-submit').addEventListener('click', handleLogin);
+  document.getElementById('login-email').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('login-pass').focus();
+  });
+  document.getElementById('login-pass').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleLogin();
+  });
+}
+
+function openLoginModal() {
+  document.getElementById('login-modal').classList.add('active');
+  document.getElementById('login-email').focus();
+}
+
+function closeLoginModal() {
+  document.getElementById('login-modal').classList.remove('active');
+  document.getElementById('login-msg').textContent = '';
+}
+
+async function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const msgEl = document.getElementById('login-msg');
+
+  if (!email || !pass) {
+    msgEl.textContent = '이메일과 비밀번호를 입력하세요.';
+    msgEl.className = 'msg';
+    return;
+  }
+
+  msgEl.textContent = '로그인 중…';
+  msgEl.className = 'msg';
+
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) throw error;
+    adminSession = data.session;
+    sessionStorage.setItem('admin_token', adminSession.access_token);
+    closeLoginModal();
+    openAdminPanel();
+  } catch (e) {
+    msgEl.textContent = '로그인 실패: ' + (e.message || '오류');
+    msgEl.className = 'msg';
+  }
+}
+
+// ══════════════════════════════════════════════
+//  Restore session from sessionStorage
+// ══════════════════════════════════════════════
+async function restoreSession() {
+  const token = sessionStorage.getItem('admin_token');
+  if (!token) return;
+  try {
+    const { data, error } = await sb.auth.getSession();
+    if (data.session) {
+      adminSession = data.session;
+    } else {
+      sessionStorage.removeItem('admin_token');
+    }
+  } catch (_) {}
+}
+
+// ══════════════════════════════════════════════
+//  Admin panel
+// ══════════════════════════════════════════════
+function setupAdminPanel() {
+  document.getElementById('admin-logout').addEventListener('click', handleLogout);
+  document.getElementById('admin-close').addEventListener('click', closeAdminPanel);
+  document.getElementById('form-cancel').addEventListener('click', resetForm);
+  document.getElementById('form-submit').addEventListener('click', handleFormSubmit);
+}
+
+function openAdminPanel() {
+  document.getElementById('admin-modal').classList.add('active');
+  renderAdminBookList();
+}
+
+function closeAdminPanel() {
+  document.getElementById('admin-modal').classList.remove('active');
+}
+
+async function handleLogout() {
+  await sb.auth.signOut();
+  adminSession = null;
+  sessionStorage.removeItem('admin_token');
+  closeAdminPanel();
+}
+
+// ══════════════════════════════════════════════
+//  Render admin book list
+// ══════════════════════════════════════════════
+function renderAdminBookList() {
+  const container = document.getElementById('admin-book-list');
+  container.innerHTML = '';
+
+  if (books.length === 0) {
+    container.innerHTML = '<p style="font-size:13px;color:#999;">책이 없습니다.</p>';
+    return;
+  }
+
+  books.forEach(b => {
+    const div = document.createElement('div');
+    div.className = 'admin-item';
+
+    const tagsHtml = (b.tags || []).map(t => '<span class="tag">' + escHtml(t) + '</span>').join('');
+
+    div.innerHTML = `
+      <div class="info">
+        <div class="title">${escHtml(b.title)}</div>
+        <div class="meta">${escHtml(b.author)} · ${tagsHtml}</div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-ghost btn-sm" data-edit="${escAttr(b.id)}">수정</button>
+        <button class="btn btn-danger btn-sm" data-del="${escAttr(b.id)}">삭제</button>
+      </div>
+    `;
+    div.querySelector('[data-edit]').addEventListener('click', () => startEdit(b.id));
+    div.querySelector('[data-del]').addEventListener('click', () => confirmDelete(b.id));
+    container.appendChild(div);
+  });
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+function escAttr(s) {
+  return (s || '').replace(/"/g, '&quot;');
+}
+
+// ══════════════════════════════════════════════
+//  Add / Edit form
+// ══════════════════════════════════════════════
+function startEdit(id) {
+  const b = books.find(x => x.id === id);
+  if (!b) return;
+
+  document.getElementById('form-title').textContent = '책 수정';
+  document.getElementById('edit-id').value = id;
+  document.getElementById('f-id').value = b.id;
+  document.getElementById('f-id').disabled = true;
+  document.getElementById('f-title').value = b.title;
+  document.getElementById('f-author').value = b.author;
+  document.getElementById('f-tags').value = (b.tags || []).join(', ');
+  document.getElementById('form-msg').textContent = '';
+
+  const hasSupabasePath = b.path && b.path.startsWith('http');
+  document.getElementById('pdf-status').textContent = hasSupabasePath ? '현재 PDF 등록됨 (새 파일로 교체 가능)' : '현재 경로: ' + b.path;
+  const hasSupabaseMusic = b.music && b.music.startsWith('http');
+  document.getElementById('music-status').textContent = b.music ? (hasSupabaseMusic ? '현재 음악 등록됨 (새 파일로 교체 가능)' : '현재 경로: ' + b.music) : '';
+}
+
+function resetForm() {
+  document.getElementById('form-title').textContent = '새 책 추가';
+  document.getElementById('edit-id').value = '';
+  document.getElementById('f-id').value = '';
+  document.getElementById('f-id').disabled = false;
+  document.getElementById('f-title').value = '';
+  document.getElementById('f-author').value = 'Macs Learning Lab';
+  document.getElementById('f-tags').value = '';
+  document.getElementById('f-pdf').value = '';
+  document.getElementById('f-music').value = '';
+  document.getElementById('form-msg').textContent = '';
+  document.getElementById('pdf-status').textContent = '';
+  document.getElementById('music-status').textContent = '';
+}
+
+async function handleFormSubmit() {
+  const msgEl = document.getElementById('form-msg');
+  msgEl.textContent = '';
+  msgEl.className = 'msg';
+
+  const editId = document.getElementById('edit-id').value;
+  const id     = document.getElementById('f-id').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+  const title  = document.getElementById('f-title').value.trim();
+  const author = document.getElementById('f-author').value.trim() || 'Macs Learning Lab';
+  const tagsRaw = document.getElementById('f-tags').value.trim();
+  const tags   = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const pdfFile  = document.getElementById('f-pdf').files[0] || null;
+  const musicFile = document.getElementById('f-music').files[0] || null;
+
+  if (!id) { msgEl.textContent = 'ID를 입력하세요.'; return; }
+  if (!title) { msgEl.textContent = '제목을 입력하세요.'; return; }
+
+  const isEdit = !!editId;
+
+  if (!isEdit && !pdfFile) {
+    msgEl.textContent = '새 책 추가 시 PDF 파일이 필요합니다.';
+    return;
+  }
+
+  try {
+    msgEl.textContent = '저장 중…';
+    msgEl.className = 'msg';
+
+    let pdfPath = '';
+    let musicPath = '';
+
+    if (isEdit) {
+      const existing = books.find(b => b.id === editId);
+      pdfPath = existing ? existing.path : '';
+      musicPath = existing ? (existing.music || '') : '';
+    }
+
+    if (pdfFile) {
+      const pdfStoragePath = `pdfs/${id}.pdf`;
+      msgEl.textContent = 'PDF 업로드 중…';
+      const { error: pdfErr } = await sb.storage
+        .from('media')
+        .upload(pdfStoragePath, pdfFile, { upsert: true, contentType: 'application/pdf' });
+      if (pdfErr) throw pdfErr;
+      pdfPath = supabaseStorageUrl('media', pdfStoragePath);
+    }
+
+    if (musicFile) {
+      const musicStoragePath = `music/${id}.mp3`;
+      msgEl.textContent = '음악 업로드 중…';
+      const { error: musicErr } = await sb.storage
+        .from('media')
+        .upload(musicStoragePath, musicFile, { upsert: true, contentType: 'audio/mpeg' });
+      if (musicErr) throw musicErr;
+      musicPath = supabaseStorageUrl('media', musicStoragePath);
+    }
+
+    const record = {
+      id,
+      title,
+      author,
+      cover: '',
+      path: pdfPath,
+      music: musicPath,
+      tags,
+    };
+
+    msgEl.textContent = 'DB 저장 중…';
+
+    if (isEdit) {
+      const { error } = await sb.from('books').update(record).eq('id', editId);
+      if (error) throw error;
+    } else {
+      const maxOrder = books.reduce((m, b) => Math.max(m, b.sort_order || 0), 0);
+      record.sort_order = maxOrder + 1;
+      const { error } = await sb.from('books').insert(record);
+      if (error) throw error;
+    }
+
+    msgEl.textContent = '저장 완료!';
+    msgEl.className = 'msg ok';
+
+    resetForm();
+    await loadBooks();
+    renderAdminBookList();
+  } catch (e) {
+    msgEl.textContent = '오류: ' + (e.message || '알 수 없는 오류');
+    msgEl.className = 'msg';
+  }
+}
+
+// ══════════════════════════════════════════════
+//  Delete
+// ══════════════════════════════════════════════
+function setupConfirmModal() {
+  document.getElementById('confirm-cancel').addEventListener('click', () => {
+    document.getElementById('confirm-modal').classList.remove('active');
+    pendingDeleteId = null;
+  });
+  document.getElementById('confirm-ok').addEventListener('click', executeDelete);
+}
+
+function confirmDelete(id) {
+  const b = books.find(x => x.id === id);
+  if (!b) return;
+  pendingDeleteId = id;
+  document.getElementById('confirm-text').textContent = `"${b.title}"을(를) 삭제하시겠습니까?`;
+  document.getElementById('confirm-modal').classList.add('active');
+}
+
+async function executeDelete() {
+  if (!pendingDeleteId) return;
+  const id = pendingDeleteId;
+
+  try {
+    const b = books.find(x => x.id === id);
+
+    await sb.storage.from('media').remove([`pdfs/${id}.pdf`]);
+    await sb.storage.from('media').remove([`music/${id}.mp3`]);
+
+    const { error } = await sb.from('books').delete().eq('id', id);
+    if (error) throw error;
+
+    await loadBooks();
+    renderAdminBookList();
+  } catch (e) {
+    alert('삭제 실패: ' + e.message);
+  }
+
+  document.getElementById('confirm-modal').classList.remove('active');
+  pendingDeleteId = null;
+}
+
+// ══════════════════════════════════════════════
+//  Boot
+// ══════════════════════════════════════════════
+init();
+</script>
 </body>
 </html>

@@ -106,6 +106,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-config.js"></script>
 
 <script>
 'use strict';
@@ -140,6 +142,8 @@ let   musicOn     = false;
 // ── Entry ──────────────────────────────────────────────────────────────────
 const qp      = new URLSearchParams(location.search);
 const bookUrl = qp.get('book');
+
+initSupabase();
 
 if (!bookUrl) {
   showError('책 경로가 지정되지 않았습니다.<br>예: <code>reader.html?book=books/chemistry.pdf</code>');
@@ -493,10 +497,34 @@ function updateUI() {
 // ══════════════════════════════════════════════════════════════════════════
 async function loadMusic(bookPath) {
   try {
-    const books = await (await fetch('books.json')).json();
-    const entry = books.find(b => b.path === bookPath);
-    if (!entry?.music) return;
-    audioEl.src = entry.music;
+    let musicUrl = '';
+
+    if (typeof sb !== 'undefined' && sb) {
+      const bookId = bookPath.split('/').pop().replace('.pdf', '');
+      const { data, error } = await sb
+        .from('books')
+        .select('music, path')
+        .or(`id.eq.${bookId},path.ilike.%${bookId}%`)
+        .limit(1);
+      if (!error && data && data.length > 0 && data[0].music) {
+        musicUrl = data[0].music;
+      }
+    }
+
+    if (!musicUrl) {
+      const resp = await fetch('books.json');
+      const books = await resp.json();
+      let entry;
+      if (bookPath.startsWith('http')) {
+        entry = books.find(b => bookPath.includes(b.id));
+      } else {
+        entry = books.find(b => b.path === bookPath);
+      }
+      if (entry?.music) musicUrl = entry.music;
+    }
+
+    if (!musicUrl) return;
+    audioEl.src = musicUrl;
     const fab = document.getElementById('music-fab');
     fab.style.display = 'flex';
     audioEl.play()
